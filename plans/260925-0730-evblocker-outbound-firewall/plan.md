@@ -1,8 +1,19 @@
 # EVBlocker — Outbound allow-list firewall cho Windows 10/11
 
-**Status:** Phase 01 code xong + verified. Tiếp theo: Phase 02.
+**Status:** Phase 01 xong + verified. UI shell đã dựng sớm (xem ghi chú dưới). Tiếp theo: Phase 02.
 **Ngày tạo:** 2026-09-25
-**Cập nhật:** 2026-09-25
+**Cập nhật:** 2026-09-26
+
+## Lệch thứ tự phase: UI làm sớm
+
+UI vốn xếp ở Phase 04. Đã kéo lên làm ngay sau Phase 01 theo yêu cầu người dùng, ở dạng
+**chỉ đọc**: hiện dữ liệu Phase 01, không có nút nào ghi vào firewall. Enforcement vẫn ở Phase 04
+và vẫn bị chặn sau Phase 03.
+
+Giao diện dùng lại design system của SmartLab (cùng nhà EVSELab): `Tokens.xaml`,
+`Palette.Dark/Light.xaml`, `Logo.xaml` copy nguyên vẹn vào repo để EVBlocker vẫn standalone,
+không tham chiếu chéo sang project khác. `Controls.xaml` viết riêng, chỉ những control app này
+dùng — copy cả 40KB của SmartLab đồng nghĩa với việc bảo trì template không có gì render.
 
 ## Mục tiêu
 

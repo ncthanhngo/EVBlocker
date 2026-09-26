@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CE53119D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVBlocker.Core.Tests", "tests\EVBlocker.Core.Tests\EVBlocker.Core.Tests.csproj", "{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVBlocker.App", "src\EVBlocker.App\EVBlocker.App.csproj", "{41611B81-B14A-42B1-8C7D-8BDB2F150CB0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41611B81-B14A-42B1-8C7D-8BDB2F150CB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41611B81-B14A-42B1-8C7D-8BDB2F150CB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41611B81-B14A-42B1-8C7D-8BDB2F150CB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41611B81-B14A-42B1-8C7D-8BDB2F150CB0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0128D1C3-0D48-48C7-A0A4-7492E862AB98} = {256BE7C5-275A-4771-88C1-F59EB4529E56}
 		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB} = {CE53119D-91F2-4A59-9244-7505CA2ED8ED}
+		{41611B81-B14A-42B1-8C7D-8BDB2F150CB0} = {256BE7C5-275A-4771-88C1-F59EB4529E56}
 	EndGlobalSection
 EndGlobal

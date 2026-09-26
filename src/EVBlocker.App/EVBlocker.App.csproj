@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- TargetFramework, Nullable, analyzers: see Directory.Build.props at the repo root. -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>EVBlocker</AssemblyName>
+    <RootNamespace>EVBlocker.App</RootNamespace>
+
+    <!-- The icon Explorer and the taskbar show for the executable itself. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+
+    <!-- WPF resolves types by reflection from XAML, so the trim analyser reports warnings it
+         cannot prove either way. Trimming is configured for real in the packaging phase with
+         TrimMode=partial; until then the analyser would only turn noise into build errors. -->
+    <IsTrimmable>false</IsTrimmable>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Also embedded as a WPF resource, which is a separate thing from ApplicationIcon:
+         Window.Icon resolves through the pack URI scheme and cannot read the exe's own icon. -->
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EVBlocker.Core\EVBlocker.Core.csproj" />
+  </ItemGroup>
+
+</Project>
