@@ -132,8 +132,20 @@ public sealed class ConfigBackup : IConfigBackup
         return List().Skip(_retain).Count(old => SafeFile.TryDelete(old.Path));
     }
 
+    /// <summary>
+    /// Builds the file name from the local time of <paramref name="when"/>.
+    /// </summary>
+    /// <remarks>
+    /// Converted to local deliberately. The name carries no offset, and TryParseTimestamp reads
+    /// it back as local time; formatting in whatever offset the caller happened to supply would
+    /// make the round trip depend on the two agreeing. They do when the caller passes
+    /// DateTimeOffset.Now, which is why this held on a machine in the same zone as its test data
+    /// and broke the moment CI ran it in UTC.
+    /// </remarks>
     internal static string BuildFileName(DateTimeOffset when) =>
-        FileNamePrefix + when.ToString(TimestampFormat, CultureInfo.InvariantCulture) + Extension;
+        FileNamePrefix
+        + when.LocalDateTime.ToString(TimestampFormat, CultureInfo.InvariantCulture)
+        + Extension;
 
     internal static DateTimeOffset? TryParseTimestamp(string fileName)
     {

@@ -21,12 +21,19 @@ public sealed class ConfigBackupTests : IDisposable
         File.WriteAllText(Path.Combine(_directory, ConfigBackup.BuildFileName(when)), "not a real export");
     }
 
-    [Fact]
-    public void FileName_RoundTripsTheTimestamp()
+    // Listing and pruning both order by the timestamp in the name, so a name that cannot be
+    // parsed back is a backup that silently disappears from the list.
+    [Theory]
+    // Offsets that are not the machine's own. The name carries no offset, so writing it in the
+    // caller's and reading it back as local would only agree by coincidence - which is exactly
+    // what happened until CI ran this in a different zone.
+    [InlineData(-8)]
+    [InlineData(0)]
+    [InlineData(7)]
+    [InlineData(13)]
+    public void FileName_RoundTripsRegardlessOfTheOffsetItWasGiven(int offsetHours)
     {
-        // Listing and pruning both order by the timestamp in the name, so a name that cannot be
-        // parsed back is a backup that silently disappears from the list.
-        var when = new DateTimeOffset(2026, 9, 26, 11, 5, 30, TimeSpan.FromHours(7));
+        var when = new DateTimeOffset(2026, 9, 26, 11, 5, 30, TimeSpan.FromHours(offsetHours));
 
         DateTimeOffset? parsed = ConfigBackup.TryParseTimestamp(ConfigBackup.BuildFileName(when));
 
