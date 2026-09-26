@@ -1,6 +1,6 @@
 # Khoá outbound lúc khởi động (boot guard)
 
-**Status:** Đã duyệt 2026-09-26. Phase 1 xong (34/34 trên máy thật). Phase 2-4 chưa làm.
+**Status:** Phase 1-3 xong, đã triển khai trên máy này (khoá đang cài). Phase 4 chờ người dùng khởi động lại máy.
 **Ngày tạo:** 2026-09-26
 **Yêu cầu:** "Khi khởi động cũng không được app nào đã chặn internet có thể vào trong một thoáng chốc."
 
@@ -47,8 +47,8 @@ thì. Nên dùng hai mảnh trong một sublayer riêng của EVBlocker:
 | # | Phase | Phụ thuộc |
 |---|---|---|
 | 1 | [Lõi WFP: cài/gỡ khoá, chốt mở, trạng thái](phase-01-wfp-guard-core.md) — **xong** | — |
-| 2 | [Gắn vào vòng đời bật/tắt chặn + task khởi động](phase-02-lifecycle-wiring.md) | 1 |
-| 3 | [Đường khôi phục + tài liệu](phase-03-recovery-and-docs.md) | 1 |
+| 2 | [Gắn vào vòng đời bật/tắt chặn + task khởi động](phase-02-lifecycle-wiring.md) — **xong** | 1 |
+| 3 | [Đường khôi phục + tài liệu](phase-03-recovery-and-docs.md) — **xong** | 1 |
 | 4 | [Kiểm chứng trên máy thật, có reboot](phase-04-verification.md) | 2, 3 |
 
 ## Tiêu chí chấp nhận
@@ -64,4 +64,4 @@ thì. Nên dùng hai mảnh trong một sublayer riêng của EVBlocker:
 
 - ~~Filter BOOTTIME có dùng được sublayer/provider riêng không?~~ **Được** — BFE nhận, đã kiểm
   trên máy thật (phase 1).
-- Thời gian chờ tối đa trước khi "mở chốt dù MpsSvc chưa lên": đề xuất 3 phút.
+- ~~Thời gian chờ tối đa~~: 3 phút (`PolicyReconciler.FirewallWait`), task giới hạn 10 phút.

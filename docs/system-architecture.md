@@ -35,6 +35,7 @@ cần quyền admin, và cũng là ranh giới quyết định cái gì test đ�
 | **P/Invoke** `iphlpapi` | Bảng TCP/UDP đang mở | Poll mỗi giây; đo được **0 ms** cho 144 socket |
 | **`netsh`** | Export/import cấu hình firewall | COM API **không có** export/import |
 | **`schtasks`** | Dead-man switch, task khởi động | Chỉ cần exit code. Đo được `/Query` trả **exit 1** khi task không tồn tại, không phụ thuộc ngôn ngữ |
+| **WFP** `fwpuclnt` | Khoá lúc khởi động | Firewall rule **không tạo được** filter boot-time — Microsoft ghi rõ. Interop cũng sinh bằng CsWin32 |
 
 ### Vì sao interop phải sinh tự động
 
@@ -64,7 +65,7 @@ thuẫn với cả hai**, mà đúng lúc mâu thuẫn là lúc người ta cầ
 ## Thứ tự trong `Enable()` chính là lập luận an toàn
 
 ```
-đọc trạng thái → nạp baseline → BACKUP → ghi rule → ARM revert → MỚI chặn
+đọc trạng thái → nạp baseline → BACKUP → ghi rule → ARM revert → exe cố định + task → khoá boot → MỚI chặn
 ```
 
 Chặn là bước **cuối cùng**, sau khi đường lui đã tồn tại. Tiến trình chết sau khi arm thì revert
@@ -78,6 +79,61 @@ là nghiêng về phía mạng còn chạy được.
 
 Nếu không đọc được allow-list thì **không thay đổi gì** và thoát với exit code khác 0. Không biết
 chính sách là gì khác với chính sách rỗng — áp cái rỗng sẽ xoá mọi rule người dùng đang dựa vào.
+
+## Khoá lúc khởi động (boot guard)
+
+**Vấn đề, đo trên máy thật** (`netsh wfp show state`, 916 filter): filter sinh từ firewall rule và
+filter "Default Outbound" **không có cờ PERSISTENT** — `MpsSvc` nạp lại mỗi lần boot. Filter
+"Boot Time Filter" của Windows chỉ **block** ở `ALE_AUTH_RECV_ACCEPT` (chiều vào) và
+`IPFORWARD`; ở `ALE_AUTH_CONNECT` (chiều ra) chỉ có PERMIT. ⇒ Chiều ra mở từ lúc `tcpip.sys` lên
+tới lúc `MpsSvc` áp policy.
+
+**Cơ chế** — sublayer riêng, weight `0xFFFF`, trên `ALE_AUTH_CONNECT_V4/V6`:
+
+| Filter | Cờ | Weight |
+|---|---|---|
+| Block mọi thứ | BOOTTIME + PERSISTENT (hai bản) | 1 |
+| Permit loopback, DHCP (UDP remote 67 / 547) | BOOTTIME + PERSISTENT | 8 |
+| **Chốt mở** — permit mọi thứ | **không** persistent | 15 |
+
+BOOTTIME có hiệu lực từ `tcpip.sys` tới lúc BFE lên; PERSISTENT từ lúc BFE lên. BFE chuyển giữa hai
+loại **nguyên tử** (MS docs), nên không có khoảnh khắc nào không có block.
+
+Filter PERSISTENT có hiệu lực **ngay khi thêm**, không riêng lúc boot. Chốt mở là thứ làm khoá vô
+hại khi máy chạy: trong một sublayer, filter nặng nhất khớp sẽ quyết — chốt mở thắng, sublayer
+không chặn gì, firewall quyết như cũ. Permit mềm (mặc định) không ghi đè được block của sublayer
+firewall. Chốt mở không persistent nên mất khi reboot — đó chính là lúc khoá cần có hiệu lực.
+
+**Mở khoá lúc boot**: task SYSTEM (BootTrigger, không delay, priority 4) poll mỗi giây tới khi đọc
+được default action (tức `MpsSvc` đã lên), đối chiếu rule, rồi `SyncBootGuard` — đang chặn thì
+thêm lại chốt mở, không chặn thì gỡ khoá. **Hết 3 phút hoặc có lỗi thì vẫn mở chốt** và ghi
+`RELEASED WITHOUT CONFIRMING...` vào log: đây là chỗ duy nhất cố ý fail-open, vì khoá không ai mở
+là máy mất mạng hẳn.
+
+**Không bao giờ có khoá mà không có đường mở**:
+
+- `Enable` chép exe vào `Program Files` và đăng ký task **trước** khi cài khoá; lỗi ở đó thì dừng,
+  chưa chặn gì.
+- Task không tắt được từ UI khi đang chặn.
+- Dead-man revert có action thứ hai `EVBlocker.exe --remove-boot-guard` sau `netsh import` —
+  import khôi phục default action nhưng không đụng được filter WFP.
+- `Disable` gỡ khoá sau khi đã đặt Allow.
+- Máy bật chặn từ trước khi có khoá: app mở bằng quyền admin sẽ `SyncBootGuard` và cài bù.
+- Khôi phục tay: `--remove-boot-guard`, hoặc `remove-boot-guard.ps1` (P/Invoke qua `Add-Type`, GUID
+  cố định — test đối chiếu từng GUID với `BootGuardFilters`).
+
+**Exe cố định trong `Program Files`**: task chạy dưới SYSTEM. Trỏ vào exe ở chỗ người dùng tự để
+thì (1) file bị chuyển/xoá là lần boot sau mất mạng, (2) ai ghi được file đó là chạy được code
+dưới SYSTEM.
+
+**Kiểm chứng**: `tools/EVBlocker.Verify` cài khoá, gỡ chốt mở, thử kết nối thật tới 1.1.1.1:443
+(bị chặn), loopback (thông), mở chốt lại, gỡ — và đối chiếu cờ bằng `netsh wfp show state`. Chạy
+qua `dotnet EVBlocker.Verify.dll` để tiến trình nằm trong allow-list.
+
+**Bẫy khi kiểm**: `netsh wfp show filters` (kể cả `verbose=on`) trả lời "filter nào thắng" nên
+giấu filter bị filter nặng hơn không điều kiện trong cùng sublayer che — khi khoá đang mở chốt,
+nó chỉ thấy 2 filter chốt mở. Dùng `show state`. File đó có hai phần tử gốc (`wfpstate`,
+`firewallState`), phải bọc lại trước khi parse.
 
 ## Vài điểm dễ sai
 

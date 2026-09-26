@@ -182,20 +182,40 @@ số đếm ngược.
 
 ## Tự kiểm tra lại khi mở máy
 
-Bật ở mục **Cài đặt** dưới đáy thanh bên. Nó đăng ký một task chạy lúc khởi động để kiểm tra danh sách có bị thay
-đổi không, và đặt lại nếu có.
+Ở mục **Cài đặt** dưới đáy thanh bên. Nó đăng ký một task chạy dưới SYSTEM lúc khởi động, trỏ vào
+bản cài cố định `C:\Program Files\EVBlocker\EVBlocker.exe`. Task làm hai việc:
 
-**Việc chặn không cần cái này.** `DefaultOutboundAction` và rule nằm trong cấu hình Windows
-Firewall, do service `MpsSvc` áp — service này chạy rất sớm trong quá trình khởi động, trước mọi
-phần mềm. Chính sách có hiệu lực ngay cả khi bạn không bao giờ mở ứng dụng.
-
-Cái này bắt trường hợp khác: installer, Group Policy, tool khác, hoặc Windows reset xoá mất rule.
-Đang chặn mà mất rule baseline nghĩa là máy mất DNS và mất cập nhật, và không có gì khác đặt
-chúng trở lại.
+- **Mở khoá lúc khởi động** (xem mục dưới). Vì vậy khi đang chặn, task này **bắt buộc** — bắt đầu
+  chặn sẽ tự bật nó, và nút tắt bị khoá tới khi ngừng chặn.
+- **Đặt lại rule bị mất**: installer, Group Policy, tool khác, hoặc Windows reset xoá mất rule.
+  Đang chặn mà mất rule baseline nghĩa là máy mất DNS và mất cập nhật, và không có gì khác đặt
+  chúng trở lại.
 
 Nó **chỉ sửa rule**, không bao giờ tự bật lại việc chặn. Ứng dụng không lưu "ý định" ở đâu cả,
 nên một profile đang không chặn thì không phân biệt được với profile bạn chủ động tắt — và đoán
 mò điều đó lúc khởi động không phải việc của nó.
+
+## Khoá lúc khởi động
+
+Cấu hình tường lửa **không** được Windows giữ sẵn qua lần khởi động: mỗi lần mở máy, service
+`MpsSvc` áp lại từ đầu. Trước lúc đó Windows **cho mọi kết nối đi ra** — bộ chặn mặc định lúc boot
+của Windows chỉ chặn chiều vào. Đo trên Windows 11 bằng `netsh wfp show state`. Service và driver
+khởi động sớm lọt ra được trong vài giây đó.
+
+Khi bạn bắt đầu chặn, EVBlocker cài thêm một bộ lọc cấp thấp (WFP) chặn **mọi** kết nối đi ra ngay
+từ lúc mạng lên, trừ localhost và DHCP. Khi máy đang chạy, một bộ lọc thứ hai ("chốt mở") vô hiệu
+nó — nên bình thường bạn không thấy gì khác. Chốt mở không sống qua lần khởi động; task tự kiểm
+tra chờ tới khi tường lửa áp xong chính sách rồi mới đặt lại chốt mở.
+
+Đánh đổi, cần biết:
+
+- Mỗi lần mở máy, **cả phần mềm được phép** cũng chờ thêm vài giây mới có mạng.
+- Tường lửa không sẵn sàng sau 3 phút thì task **vẫn mở chốt** và ghi rõ vào
+  `reconcile.log` — mất mạng hẳn tệ hơn vài giây hở.
+- Task hỏng hoặc bị xoá thì máy **không có mạng** sau khi khởi động lại. Xem mục
+  [Mất mạng sau khi khởi động lại](#mất-mạng-sau-khi-khởi-động-lại).
+
+Ngừng chặn hoặc tự bỏ chặn (hết giờ mà không bấm Giữ nguyên) đều gỡ khoá.
 
 ## Quét USB
 
@@ -238,7 +258,9 @@ nhất — không bị bỏ sót.
 | `%ProgramData%\EVBlocker\baseline-allow.json` | Ghi đè danh sách dịch vụ hệ thống, nếu bạn tạo |
 | `%ProgramData%\EVBlocker\known-apps.json` | Ghi đè danh mục phần mềm quen thuộc, nếu bạn tạo |
 | `%ProgramData%\EVBlocker\backups\*.wfw` | Bản sao lưu firewall, giữ 10 bản mới nhất |
-| `%ProgramData%\EVBlocker\reconcile.log` | Nhật ký của lần chạy lúc khởi động |
+| `%ProgramData%\EVBlocker\reconcile.log` | Nhật ký của lần chạy lúc khởi động, kể cả việc mở khoá |
+| `C:\Program Files\EVBlocker\EVBlocker.exe` | Bản cài cố định mà task SYSTEM chạy; chép vào khi bắt đầu chặn |
+| `C:\Program Files\EVBlocker\remove-boot-guard.ps1` | Script gỡ khoá lúc khởi động, dùng được khi không còn exe |
 | `%ProgramData%\EVBlocker\quarantine\` | File cách ly từ USB, kèm manifest ghi nơi lấy ra |
 | `%LOCALAPPDATA%\EVBlocker\settings.json` | Giao diện sáng/tối, tự chạy khi đăng nhập (riêng từng người dùng) |
 | `%LOCALAPPDATA%\EVBlocker\crash.log` | Lỗi không xử lý được |
@@ -259,7 +281,35 @@ netsh advfirewall set allprofiles firewallpolicy allowinbound,allowoutbound
 
 # Hoặc khôi phục toàn bộ từ bản sao lưu (ghi đè MỌI rule, kể cả của phần mềm khác)
 netsh advfirewall import "C:\ProgramData\EVBlocker\backups\firewall-YYYYMMDD-HHMMSS.wfw"
+
+# Gỡ khoá lúc khởi động (hai lệnh trên KHÔNG gỡ nó)
+& "C:\Program Files\EVBlocker\EVBlocker.exe" --remove-boot-guard
 ```
+
+### Mất mạng sau khi khởi động lại
+
+Dấu hiệu khoá lúc khởi động chưa được mở: vừa khởi động lại, **không phần mềm nào** ra được
+internet, kể cả phần mềm trong danh sách cho phép, và vẫn thế sau vài phút.
+
+1. Xem `C:\ProgramData\EVBlocker\reconcile.log` — dòng cuối nói task đã chạy chưa và vì sao.
+2. Gỡ khoá, trong PowerShell **as Administrator**:
+
+   ```powershell
+   & "C:\Program Files\EVBlocker\EVBlocker.exe" --remove-boot-guard
+   ```
+
+   Không còn file exe thì dùng script đi kèm — nó không cần EVBlocker:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File "C:\Program Files\EVBlocker\remove-boot-guard.ps1"
+   ```
+
+   Mạng về ngay, không cần khởi động lại. Việc chặn trong tường lửa vẫn giữ nguyên.
+3. Mở EVBlocker bằng quyền quản trị: nó cài lại khoá và task cho lần khởi động sau.
+
+Xem khoá có đang tồn tại không: `netsh wfp show state file=wfp.xml`, rồi tìm
+`EVBlocker boot guard` trong file. Đừng dùng `show filters` — lệnh đó giấu các filter bị filter
+khác trong cùng sublayer che, tức là giấu gần hết khoá.
 
 ## Baseline — những gì Windows luôn được phép
 
@@ -315,8 +365,9 @@ chương trình.
 **Ứng dụng Microsoft Store (UWP)** dùng package identity chứ không dùng đường dẫn exe — chưa hỗ
 trợ.
 
-**Có một khe hở rất sớm trong quá trình khởi động**, trước khi `MpsSvc` áp đầy đủ chính sách.
-Đây là đặc tính của Windows, không kiểm soát được.
+**Khoá lúc khởi động chỉ có khi đang chặn, và chỉ chặn chiều ra.** Nó đóng khe hở vài giây lúc
+khởi động mà Windows để mở (xem [Khoá lúc khởi động](#khoá-lúc-khởi-động)). Một phần mềm có quyền
+admin tự gỡ được nó, như gỡ được rule.
 
 **UDP không thấy được đích ở tab Đang kết nối.** Windows không cung cấp địa chỉ đích trong bảng
 UDP, kể cả với socket đã kết nối. Nghĩa là QUIC/HTTP3 và DNS không xác định được đích bằng cách

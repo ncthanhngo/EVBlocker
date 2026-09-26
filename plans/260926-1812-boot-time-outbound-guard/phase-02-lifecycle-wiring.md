@@ -38,3 +38,32 @@
 ## Risks / rollback
 - Thứ tự sai ⇒ mất mạng. Test khẳng định thứ tự bằng fake ghi lại chuỗi lời gọi.
 - Rollback code: revert commit; gỡ khoá trên máy bằng phase 3.
+
+## Kết quả (2026-09-26)
+
+Xong. Khác plan:
+- Tường lửa "sẵn sàng" = đọc được `DefaultOutboundAction` (COM chỉ trả lời khi MpsSvc chạy), không
+  gọi ServiceController — tránh thêm package.
+- Thêm `SyncBootGuard(prepare)`: dùng lúc boot (prepare=false) và khi app mở bằng quyền admin
+  (prepare=true) — cài bù cho máy đã bật chặn từ trước khi có khoá (chính máy này).
+- App mở bằng quyền admin cũng làm mới bản exe cố định nếu task đang dùng nó, để bản đó không cũ.
+
+Test: 19 test mới (`BootGuardLifecycleTests`), task khởi động kiểm schema thật với Task Scheduler.
+
+Tích hợp thật, elevated, bản Release, trên máy đang bật chặn:
+1. Mở app: chép exe + script vào Program Files, task trỏ vào đó, không delay, 14 filter khoá.
+2. Gỡ chốt mở (giả lập boot) → `--reconcile` → chốt mở về, log `Boot guard: released`.
+3. Script khôi phục → 0 filter.
+4. `--reconcile` lần nữa → khoá cài lại (đang chặn).
+
+## Review (2026-09-26) — [report](../reports/code-reviewer-260926-1845-boot-guard-lifecycle.md)
+
+Đã sửa trước khi commit:
+- C1: lỗi ngoài dự kiến khi reconcile (COM, timeout schtasks…) làm bỏ qua bước mở khoá → bắt hết, luôn settle khoá. 3 test.
+- C2: bản không phải single-file chép vào Program Files sẽ không chạy → từ chối (có `EVBlocker.Core.dll` cạnh exe).
+- H1: khoá đã Released thì bỏ qua đăng ký lại task → prepare luôn chạy khi được yêu cầu.
+- H2: tắt được task khi firewall Off nhưng khoá còn → chặn theo trạng thái khoá, sync trước khi gỡ task.
+- M1: chờ firewall tính theo đồng hồ thật (không vượt giới hạn task). M3: UI bắt mọi exception. M4: so size + thời gian trước khi hash. L4: dọn `.new`.
+
+Chưa sửa (ghi nhận): M2 BFE khởi động lại giữa phiên → khoá bật tới lần boot/mở app admin sau (hiếm); L1-L3.
+Chưa chạy lại tích hợp elevated sau các sửa này (UAC bị huỷ) — chạy ở phase 4.

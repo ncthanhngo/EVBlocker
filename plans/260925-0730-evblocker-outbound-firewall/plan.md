@@ -32,6 +32,11 @@ Enforcement **không cần app chạy**. `DefaultOutboundAction` và rule nằm 
 Windows Firewall, do service `MpsSvc` áp. `MpsSvc` khởi động rất sớm trong boot — trước mọi
 phần mềm user-mode — nên chặn có hiệu lực ngay sau reboot dù app không bao giờ được mở.
 
+> **Sửa 2026-09-26:** "trước mọi phần mềm user-mode" sai. Đo bằng `netsh wfp show state`: policy
+> không persistent, và trước khi `MpsSvc` áp xong thì chiều ra mở hoàn toàn — service khởi động
+> sớm lọt được. Đã đóng bằng khoá lúc khởi động:
+> [plan](../260926-1812-boot-time-outbound-guard/plan.md).
+
 Thành phần startup **không phải** để thực thi việc chặn, mà để:
 
 - phát hiện config bị thay đổi ngoài app (installer, GPO, tool khác, Windows reset) và áp lại
@@ -163,7 +168,7 @@ Chưa kiểm được — **cần máy ảo**:
 | App Store/UWP không có path exe | Ghi nhận giới hạn; hỗ trợ package SID để sau |
 | Process chạy quyền admin tự xoá được rule | Reconciler lúc boot áp lại. Ghi rõ trong docs: đây không phải hàng rào chống malware |
 | Config bị installer/GPO/Windows reset ghi đè | Reconciler so sánh actual vs desired mỗi lần boot, áp lại nếu lệch |
-| Khe hở rất sớm trong boot, trước khi `MpsSvc` áp policy đầy đủ | Cố hữu của Windows (boot-time WFP filter), không kiểm soát được. Ghi nhận trong docs, không hứa hẹn sai |
+| Khe hở chiều ra lúc boot, trước khi `MpsSvc` áp policy | Đóng bằng khoá lúc khởi động (WFP BOOTTIME + PERSISTENT, xem trên). Đổi lại: vài giây không mạng cho mọi app sau mỗi lần boot |
 
 ## Giới hạn có chủ ý (không làm)
 

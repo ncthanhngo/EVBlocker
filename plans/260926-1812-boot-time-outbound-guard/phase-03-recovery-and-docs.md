@@ -15,3 +15,10 @@
 ## Validation
 - Chạy script trên máy đang có khoá (Verify tool dựng khoá) ⇒ sạch.
 - Đọc lại tài liệu: lệnh copy-paste chạy được, đường dẫn đúng.
+
+## Kết quả (2026-09-26)
+
+Xong: `--remove-boot-guard`, `tools/remove-boot-guard.ps1` (nhúng vào exe, chép ra Program Files,
+test đối chiếu GUID), hướng dẫn sử dụng (mục Khoá lúc khởi động, Mất mạng sau khi khởi động lại,
+Giới hạn, Vị trí file), kiến trúc (mục boot guard + bẫy `show filters`), sửa câu sai ở plan cũ.
+Script đặt console UTF-8 — lần chạy đầu in tiếng Việt thành `?`.
