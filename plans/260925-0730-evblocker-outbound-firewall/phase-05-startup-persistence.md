@@ -1,7 +1,48 @@
 # Phase 05 — Startup, persistence, xử lý reboot
 
-**Status:** chưa làm — phụ thuộc Phase 04
+**Status:** xong. Chế độ `--reconcile` đã chạy thật (thất bại an toàn khi không có admin).
 **Chạm firewall:** có (áp lại policy khi phát hiện drift)
+
+## Lệch so với plan
+
+**Bỏ tray icon.** Plan xếp nó là "tiện lợi, không phải cơ chế thực thi". Nó cần kéo
+`UseWindowsForms` vào một app WPF chỉ để có `NotifyIcon`, làm tăng dung lượng bản self-contained
+mà không thêm giá trị an toàn nào. Trạng thái đã hiện đủ trong cửa sổ chính.
+
+**Bỏ `state.json`** (đã quyết từ Phase 04): trạng thái suy ra từ máy. Reconciler cũng suy ra, nên
+không có file nào để lệch.
+
+**Tách `IScheduledTaskHost`.** Dead-man switch và startup task đều dùng `schtasks`; plumbing gom
+về một chỗ, mỗi bên chỉ giữ phần XML riêng.
+
+## Reconciler làm gì và cố ý KHÔNG làm gì
+
+Chỉ đối chiếu **rule**, không bao giờ đụng `DefaultOutboundAction`. Không có bản ghi ý định nào
+(cố ý), nên một profile đang không chặn thì **không phân biệt được** với profile người dùng chủ
+động tắt. Bật chặn trở lại lúc khởi động dựa trên phỏng đoán đó không phải quyết định của nó.
+Để nguyên là nghiêng về phía mạng còn chạy được.
+
+Rule thì khác: allow-list là ý định đã nói rõ, và một rule biến mất trong lúc đang chặn nghĩa là
+một ứng dụng đã được duyệt đang âm thầm mất mạng — hoặc với rule baseline, là cả cái máy.
+
+## Kết quả verify (2026-09-26)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `dotnet test` | 227/227 pass |
+| `--reconcile` khi không có admin | exit **1**, **không hiện cửa sổ**, ghi log, **không đổi gì** |
+| Nội dung log | `Cannot add rule '...': this requires running EVBlocker as administrator.` |
+| Trên bản publish single-file | hành vi giống hệt |
+
+Lần đo đầu cho exit 0 và không có log — sai, vì `&` trong PowerShell không chờ một WinExe.
+`Start-Process -Wait` mới cho số đúng.
+
+**Lỗi tìm ra nhờ chạy thật:** `Guard` trong `WindowsFirewallPolicy` chỉ bắt `COMException`, nhưng
+runtime map `E_ACCESSDENIED` thành `UnauthorizedAccessException` ngay ở tầng interop — nên nhánh
+đó là **code chết** đúng cho trường hợp nó sinh ra để xử lý. Thông báo lỗi trước khi sửa là chuỗi
+COM thô.
+
+**Chưa verify:** đăng ký startup task dưới SYSTEM, và một lần reboot thật.
 
 ## Tiền đề cần hiểu đúng
 

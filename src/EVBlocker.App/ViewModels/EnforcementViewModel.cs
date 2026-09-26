@@ -7,6 +7,7 @@ using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.Policy;
+using EVBlocker.Core.Startup;
 
 namespace EVBlocker.App.ViewModels;
 
@@ -28,12 +29,16 @@ public sealed class EnforcementViewModel : ObservableObject
 
     private readonly EnforcementController _controller;
     private readonly AllowListStore _store;
+    private readonly StartupReconcileTask _startupTask;
     private readonly Func<string, string, bool> _confirm;
     private readonly DispatcherTimer _countdown;
 
     private readonly RelayCommand _enableCommand;
     private readonly RelayCommand _confirmCommand;
     private readonly RelayCommand _disableCommand;
+    private readonly RelayCommand _toggleStartupCommand;
+
+    private bool _startupInstalled;
 
     private EnforcementStatus? _status;
     private RevertOption _revertAfter;
@@ -52,16 +57,20 @@ public sealed class EnforcementViewModel : ObservableObject
     public EnforcementViewModel(
         EnforcementController controller,
         AllowListStore store,
+        StartupReconcileTask startupTask,
         Func<string, string, bool> confirm)
     {
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(startupTask);
         ArgumentNullException.ThrowIfNull(confirm);
 
         _controller = controller;
         _store = store;
+        _startupTask = startupTask;
         _confirm = confirm;
         _revertAfter = RevertOptions[1];
+        _toggleStartupCommand = new RelayCommand(ToggleStartupTask, () => ElevationService.IsElevated);
 
         _enableCommand = new RelayCommand(Enable, () => State == EnforcementState.Off && ElevationService.IsElevated);
         _confirmCommand = new RelayCommand(ConfirmEnforcement, () => State == EnforcementState.Armed && ElevationService.IsElevated);
@@ -79,7 +88,24 @@ public sealed class EnforcementViewModel : ObservableObject
 
     public System.Windows.Input.ICommand DisableCommand => _disableCommand;
 
+    public System.Windows.Input.ICommand ToggleStartupCommand => _toggleStartupCommand;
+
     public EnforcementState State => _status?.State ?? EnforcementState.Off;
+
+    /// <summary>
+    /// Whether the boot-time reconcile task is registered.
+    /// </summary>
+    /// <remarks>
+    /// Worth surfacing because its absence is invisible otherwise: blocking keeps working without
+    /// it, right up until something removes the rules and nothing puts them back.
+    /// </remarks>
+    public bool StartupTaskInstalled => _startupInstalled;
+
+    public string StartupTaskText => _startupInstalled
+        ? "Tự áp lại khi khởi động: BẬT"
+        : "Tự áp lại khi khởi động: TẮT — rule bị xoá bên ngoài sẽ không được khôi phục";
+
+    public string StartupToggleLabel => _startupInstalled ? "Tắt tự áp lại" : "Bật tự áp lại";
 
     public RevertOption RevertAfter
     {
@@ -142,6 +168,7 @@ public sealed class EnforcementViewModel : ObservableObject
         try
         {
             _status = _controller.GetStatus();
+            _startupInstalled = _startupTask.IsInstalled();
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -196,6 +223,28 @@ public sealed class EnforcementViewModel : ObservableObject
         });
     }
 
+    private void ToggleStartupTask() => Run(() =>
+    {
+        if (_startupInstalled)
+        {
+            _startupTask.Uninstall();
+            Message = "Đã tắt tự áp lại khi khởi động.";
+            return;
+        }
+
+        // Environment.ProcessPath is the running executable, so the task points at whatever copy
+        // the user actually launched rather than at a guessed install location.
+        string? executable = Environment.ProcessPath;
+        if (string.IsNullOrEmpty(executable))
+        {
+            Message = "Không xác định được đường dẫn của chính ứng dụng, chưa đăng ký được.";
+            return;
+        }
+
+        _startupTask.Install(executable);
+        Message = "Đã bật. Mỗi lần khởi động máy, rule sẽ được kiểm tra và áp lại nếu bị thay đổi.";
+    });
+
     private void ConfirmEnforcement() => Run(() =>
     {
         _status = _controller.Confirm();
@@ -242,9 +291,13 @@ public sealed class EnforcementViewModel : ObservableObject
         OnPropertyChanged(nameof(RevertCountdown));
         OnPropertyChanged(nameof(ShowArmedControls));
         OnPropertyChanged(nameof(ShowEnableControls));
+        OnPropertyChanged(nameof(StartupTaskInstalled));
+        OnPropertyChanged(nameof(StartupTaskText));
+        OnPropertyChanged(nameof(StartupToggleLabel));
 
         _enableCommand.RaiseCanExecuteChanged();
         _confirmCommand.RaiseCanExecuteChanged();
         _disableCommand.RaiseCanExecuteChanged();
+        _toggleStartupCommand.RaiseCanExecuteChanged();
     }
 }

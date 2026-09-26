@@ -184,6 +184,42 @@
       </DockPanel>
     </DataTemplate>
 
+    <!-- ===================== section: settings ===================== -->
+    <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+      <StackPanel>
+
+        <Border Style="{StaticResource Card}" Padding="20,16">
+          <StackPanel>
+            <TextBlock Text="GIAO DIỆN" Style="{StaticResource SectionLabel}" />
+            <CheckBox Content="Dùng giao diện tối" Margin="0,10,0,0"
+                      IsChecked="{Binding IsDarkTheme}" />
+            <TextBlock Text="Mặc định là giao diện sáng. Lựa chọn được ghi nhớ cho lần mở sau."
+                       Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Padding="20,16" Margin="0,14,0,0">
+          <StackPanel>
+            <TextBlock Text="CẬP NHẬT" Style="{StaticResource SectionLabel}" />
+            <TextBlock Text="{Binding VersionText}" Margin="0,10,0,0" FontWeight="SemiBold" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+              <Button Content="Kiểm tra bản mới" Style="{StaticResource PrimaryButton}"
+                      Command="{Binding CheckUpdateCommand}" />
+              <Button Content="Mở trang phát hành" Margin="10,0,0,0"
+                      Command="{Binding OpenReleaseCommand}" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding UpdateStatus}" Margin="0,12,0,0" TextWrapping="Wrap"
+                       Style="{StaticResource SecondaryText}" />
+
+            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Style="{StaticResource MutedText}"
+                       Text="Chỉ kiểm tra khi bạn bấm nút. Ứng dụng này tồn tại để ngăn phần mềm tự ý ra internet, nên nó không tự liên hệ GitHub. Việc tải và cài bản mới do bạn thực hiện thủ công." />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </DataTemplate>
+
     <!-- ===================== section: not built yet ===================== -->
     <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
       <Border Style="{StaticResource Card}" Padding="48">
@@ -274,9 +310,12 @@
               <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
                       Content="Chạy lại với quyền Admin" VerticalAlignment="Center"
                       Margin="14,0,0,0" Command="{Binding RelaunchElevatedCommand}" />
+              <!-- Amber carries the warning through the border, not the words. On the light
+                   palette the warning colour reaches about 3.8:1 against this surface, which is
+                   under the 4.5:1 body text needs; the border has no such requirement. -->
               <TextBlock Text="{Binding ElevationMessage}" TextWrapping="Wrap"
                          VerticalAlignment="Center"
-                         Foreground="{DynamicResource WarningBrush}" />
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
             </DockPanel>
           </Border>
 
@@ -337,9 +376,35 @@
                 </StackPanel>
               </Grid>
 
+              <!-- Same reasoning as the banner: the countdown is body text and needs the
+                   readable colour, not the alert one. -->
               <TextBlock Text="{Binding RevertCountdown}" Margin="0,10,0,0"
-                         Foreground="{DynamicResource WarningBrush}" FontSize="12"
+                         Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12"
+                         FontWeight="SemiBold"
                          Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
+
+              <!-- Persistence. Separated by a hairline because it is a different question from
+                   the one above it: not whether blocking is on, but whether it repairs itself. -->
+              <Border Margin="0,12,0,0" Padding="0,12,0,0" BorderThickness="0,1,0,0"
+                      BorderBrush="{DynamicResource HairlineBrush}">
+                <DockPanel>
+                  <Button DockPanel.Dock="Right" Content="{Binding StartupToggleLabel}"
+                          Command="{Binding ToggleStartupCommand}" VerticalAlignment="Center"
+                          Margin="12,0,0,0" />
+                  <TextBlock Text="{Binding StartupTaskText}" VerticalAlignment="Center"
+                             TextWrapping="Wrap">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding StartupTaskInstalled}" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                </DockPanel>
+              </Border>
 
               <TextBlock Text="{Binding Message}" Margin="0,8,0,0" TextWrapping="Wrap"
                          Style="{StaticResource MutedText}" />
@@ -376,7 +441,8 @@
                    FontSize="11" FontWeight="SemiBold" />
 
         <TextBlock DockPanel.Dock="Bottom" Margin="18,0,14,0" TextWrapping="Wrap"
-                   Text="Phase 04 · enforcement" FontSize="11"
+                   Text="{Binding Source={x:Static vm:MainViewModel.AppVersion}, Mode=OneTime}"
+                   FontSize="11"
                    Foreground="{DynamicResource SidebarMutedBrush}" Opacity="0.75" />
 
         <ListBox Style="{StaticResource RailList}"

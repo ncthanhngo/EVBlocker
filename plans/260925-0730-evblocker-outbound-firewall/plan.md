@@ -1,6 +1,6 @@
 # EVBlocker — Outbound allow-list firewall cho Windows 10/11
 
-**Status:** Phase 01-04 xong (chưa bật enforcement thật). Tiếp theo: Phase 05 (startup/reconciler).
+**Status:** Cả 6 phase đã code xong. Còn lại: kiểm chứng các thao tác cần quyền admin, và test trên VM trắng.
 **Ngày tạo:** 2026-09-25
 **Cập nhật:** 2026-09-26
 
@@ -50,8 +50,10 @@ không popup UAC.
 | Firewall API | COM `INetFwPolicy2`, interop sinh bằng **CsWin32** | Vtable đến từ metadata Win32 chính thức, không từ trí nhớ. Xem phase-02 |
 | Active connections | P/Invoke `GetExtendedTcpTable` / `GetExtendedUdpTable` | Không spawn process, đủ nhanh để poll 1s |
 | History | Event Log 5157/5156 qua `EventLogQuery` | Dữ liệu sẵn có, không cần driver |
-| Đóng gói | Self-contained single-file, trimmed (~65 MB) | Chạy trên máy trắng, không cần cài runtime |
+| Đóng gói | Self-contained single-file, **không trim** (62.9 MB) | WPF không hỗ trợ trimming (NETSDK1168) — xem phase-06 |
 | Service | Không (v1) | YAGNI — rule firewall vẫn hiệu lực khi đóng app |
+| Giao diện | Sáng (mặc định) + tối, đổi trong Cài đặt | Hai palette key-for-key, swap runtime |
+| Cập nhật | Kiểm tra GitHub Releases **khi bấm nút** | App này ngăn phần mềm tự ra internet; nó không tự làm điều đó |
 
 Không dùng driver/WFP callout: không cần cho yêu cầu hiện tại, và ký driver là rào cản lớn.
 

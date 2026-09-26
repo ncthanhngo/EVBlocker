@@ -1,0 +1,12 @@
+# Normalise line endings so a clone on another machine does not show every file as modified.
+* text=auto eol=lf
+
+# Windows-native formats that tooling expects with CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.sln text eol=crlf
+
+*.ico binary
+*.png binary
+*.wfw binary

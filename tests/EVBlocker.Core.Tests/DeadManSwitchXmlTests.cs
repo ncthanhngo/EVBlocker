@@ -129,4 +129,49 @@ public sealed class DeadManSwitchXmlTests
 
         Assert.Throws<ArgumentException>(() => sut.Arm(path, TimeSpan.FromMinutes(10)));
     }
+
+    [Fact]
+    public void Arm_MissingBackup_IsRefused()
+    {
+        // Arming a revert that points at nothing is worse than not arming one: it reports safety
+        // that does not exist.
+        var sut = new ScheduledTaskDeadManSwitch(new FakeScheduledTaskHost());
+
+        Assert.Throws<FileNotFoundException>(
+            () => sut.Arm(Path.Combine(Path.GetTempPath(), "absent.wfw"), TimeSpan.FromMinutes(10)));
+    }
+
+    [Fact]
+    public void ArmThenDisarm_RegistersAndRemovesTheTask()
+    {
+        var host = new FakeScheduledTaskHost();
+        var sut = new ScheduledTaskDeadManSwitch(host);
+        string backup = Path.Combine(Path.GetTempPath(), $"evb-{Guid.NewGuid():N}.wfw");
+        File.WriteAllText(backup, "export");
+
+        try
+        {
+            Assert.False(sut.IsArmed());
+
+            sut.Arm(backup, TimeSpan.FromMinutes(10));
+            Assert.True(sut.IsArmed());
+            Assert.Contains(backup, host.XmlFor(ScheduledTaskDeadManSwitch.TaskName), StringComparison.Ordinal);
+
+            sut.Disarm();
+            Assert.False(sut.IsArmed());
+        }
+        finally
+        {
+            File.Delete(backup);
+        }
+    }
+
+    [Fact]
+    public void DeadManAndStartupTasks_UseDifferentNames()
+    {
+        // One name for both would mean arming a revert silently replaced the boot-time repair.
+        Assert.NotEqual(
+            ScheduledTaskDeadManSwitch.TaskName,
+            EVBlocker.Core.Startup.StartupReconcileTask.TaskName);
+    }
 }

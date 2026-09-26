@@ -1,12 +1,11 @@
 using System.Collections.ObjectModel;
 using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
-using EVBlocker.Core.Baseline;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.History;
 using EVBlocker.Core.Monitor;
 using EVBlocker.Core.Policy;
-using EVBlocker.Core.Safety;
+using EVBlocker.Core.Startup;
 
 namespace EVBlocker.App.ViewModels;
 
@@ -25,7 +24,7 @@ public sealed class MainViewModel : ObservableObject
 
         // Dot colours come from the shared palette's nav set, so a section here reads as the
         // same kind of thing as a section in the other EVSELab apps.
-        var store = new AllowListStore(AllowListStore.DefaultPath);
+        AllowListStore store = CoreServices.CreateAllowListStore();
 
         AllowList = new AllowListViewModel(
             store,
@@ -34,19 +33,19 @@ public sealed class MainViewModel : ObservableObject
             Confirm);
 
         Enforcement = new EnforcementViewModel(
-            new EnforcementController(
-                new WindowsFirewallPolicy(),
-                new ConfigBackup(ConfigBackup.DefaultDirectory),
-                new ScheduledTaskDeadManSwitch(),
-                new OsBaseline()),
+            CoreServices.CreateEnforcementController(),
             store,
+            new StartupReconcileTask(),
             Confirm);
+
+        Settings = new SettingsViewModel();
 
         Sections = new ObservableCollection<NavSectionViewModel>
         {
             new("Đang kết nối", "#5AA9FF", ActiveConnections),
             new("Đã thử kết nối", "#F5B93B", History),
             new("Allow-list", "#2BD673", AllowList),
+            new("Cài đặt", "#94A3B8", Settings),
         };
 
         _selectedSection = Sections[0];
@@ -69,6 +68,8 @@ public sealed class MainViewModel : ObservableObject
 
     public EnforcementViewModel Enforcement { get; }
 
+    public SettingsViewModel Settings { get; }
+
     public System.Windows.Input.ICommand RelaunchElevatedCommand { get; }
 
     public bool ShowElevationBanner => !ElevationService.IsElevated;
@@ -76,6 +77,13 @@ public sealed class MainViewModel : ObservableObject
     public string ElevationMessage =>
         "Đang chạy không có quyền Admin — đường dẫn của phần lớn tiến trình sẽ trống "
         + "và không đọc được lịch sử từ Security log.";
+
+    /// <summary>
+    /// Shown in the rail. Replaced a hard-coded phase label that went stale every time a phase
+    /// landed, and that meant nothing to anyone running the app.
+    /// </summary>
+    public static string AppVersion =>
+        $"EVBlocker {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0"}";
 
     public string ElevationBadge => ElevationService.IsElevated ? "Administrator" : "Quyền hạn chế";
 

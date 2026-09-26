@@ -1,7 +1,11 @@
 <Application x:Class="EVBlocker.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="Views/MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    No StartupUri. The application decides in OnStartup whether to show a window at all: launched
+    in reconcile mode it runs headless and exits with a status code, and a StartupUri would put a
+    window on screen during boot, under the SYSTEM account, where nobody would ever see it.
+  -->
   <Application.Resources>
     <ResourceDictionary>
       <!--
@@ -11,7 +15,9 @@
       -->
       <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Themes/Tokens.xaml" />
-        <ResourceDictionary Source="Themes/Palette.Dark.xaml" />
+        <!-- Light is the default. OnStartup replaces this with whatever the user last chose;
+             ThemeManager finds the palette by this file-name prefix, so the two must match. -->
+        <ResourceDictionary Source="Themes/Palette.Light.xaml" />
         <ResourceDictionary Source="Themes/Logo.xaml" />
         <ResourceDictionary Source="Themes/Controls.xaml" />
       </ResourceDictionary.MergedDictionaries>

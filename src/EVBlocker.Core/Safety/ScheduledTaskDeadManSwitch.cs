@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Security;
-using System.Text;
-using EVBlocker.Core.Internal;
+using EVBlocker.Core.Startup;
 
 namespace EVBlocker.Core.Safety;
 
@@ -13,12 +12,6 @@ namespace EVBlocker.Core.Safety;
 /// does not: it survives the app being killed, and with StartWhenAvailable it still runs after a
 /// reboot that spanned the scheduled moment. An in-process timer would die alongside the thing it
 /// is supposed to rescue.
-///
-/// schtasks.exe is used rather than the Task Scheduler COM API. The usual reason to prefer COM -
-/// not parsing localised console output - does not apply here: creating, deleting and testing for
-/// a task need only exit codes, and `schtasks /Query` returning 1 for a missing task was verified
-/// to be locale-independent. The COM route would mean generating and wiring roughly ten more
-/// interfaces for no behaviour this needs.
 /// </remarks>
 public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
 {
@@ -31,8 +24,6 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
     /// <summary>Well-known SID of LOCAL SYSTEM. Used instead of the name, which is localised.</summary>
     private const string LocalSystemSid = "S-1-5-18";
 
-    private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(30);
-
     /// <summary>
     /// Bounds on the delay. Too short and the user cannot finish checking whether the network
     /// still works; too long and a machine sits broken for the rest of the day.
@@ -41,16 +32,20 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
 
     public static readonly TimeSpan MaximumDelay = TimeSpan.FromMinutes(60);
 
-    public bool IsArmed()
-    {
-        // Exit 1 means "no such task"; verified to be the code regardless of display language.
-        ProcessResult result = ProcessRunner.Run(
-            "schtasks.exe",
-            new[] { "/Query", "/TN", TaskName },
-            CommandTimeout);
+    private readonly IScheduledTaskHost _tasks;
 
-        return result.Succeeded;
+    public ScheduledTaskDeadManSwitch()
+        : this(new SchTasksHost())
+    {
     }
+
+    public ScheduledTaskDeadManSwitch(IScheduledTaskHost tasks)
+    {
+        ArgumentNullException.ThrowIfNull(tasks);
+        _tasks = tasks;
+    }
+
+    public bool IsArmed() => _tasks.Exists(TaskName);
 
     public void Arm(string backupPath, TimeSpan delay)
     {
@@ -64,8 +59,6 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
                 $"Delay must be between {MinimumDelay.TotalMinutes:0} and {MaximumDelay.TotalMinutes:0} minutes.");
         }
 
-        Elevation.Require("schedule the automatic revert");
-
         if (!File.Exists(backupPath))
         {
             // Arming a revert that points at nothing is worse than not arming one: it reports
@@ -74,49 +67,10 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
                 "Refusing to arm a revert for a backup that does not exist.", backupPath);
         }
 
-        string xml = BuildTaskXml(backupPath, DateTimeOffset.Now + delay);
-        string xmlFile = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"evblocker-deadman-{Guid.NewGuid():N}.xml");
-
-        try
-        {
-            // schtasks expects the definition as UTF-16.
-            File.WriteAllText(xmlFile, xml, new UnicodeEncoding(bigEndian: false, byteOrderMark: true));
-
-            ProcessResult result = ProcessRunner.Run(
-                "schtasks.exe",
-                new[] { "/Create", "/TN", TaskName, "/XML", xmlFile, "/F" },
-                CommandTimeout);
-
-            if (!result.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    $"Could not schedule the automatic revert (exit {result.ExitCode}). "
-                    + $"{Describe(result)}");
-            }
-        }
-        finally
-        {
-            TryDelete(xmlFile);
-        }
+        _tasks.Register(TaskName, BuildTaskXml(backupPath, DateTimeOffset.Now + delay));
     }
 
-    public void Disarm()
-    {
-        Elevation.Require("cancel the automatic revert");
-
-        ProcessResult result = ProcessRunner.Run(
-            "schtasks.exe",
-            new[] { "/Delete", "/TN", TaskName, "/F" },
-            CommandTimeout);
-
-        // Nothing to delete is the desired end state either way, so only a real failure throws.
-        if (!result.Succeeded && IsArmed())
-        {
-            throw new InvalidOperationException(
-                $"Could not cancel the automatic revert (exit {result.ExitCode}). {Describe(result)}");
-        }
-    }
+    public void Disarm() => _tasks.Remove(TaskName);
 
     /// <summary>
     /// Builds the task definition.
@@ -131,7 +85,7 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
     /// </remarks>
     internal static string BuildTaskXml(string backupPath, DateTimeOffset fireAt)
     {
-        string netsh = System.IO.Path.Combine(Environment.SystemDirectory, "netsh.exe");
+        string netsh = Path.Combine(Environment.SystemDirectory, "netsh.exe");
         string arguments = SecurityElement.Escape($"advfirewall import \"{backupPath}\"") ?? string.Empty;
         string start = fireAt.LocalDateTime.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
 
@@ -172,29 +126,5 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
               </Actions>
             </Task>
             """;
-    }
-
-    private static string Describe(ProcessResult result)
-    {
-        string detail = string.IsNullOrWhiteSpace(result.StandardError)
-            ? result.StandardOutput
-            : result.StandardError;
-
-        return detail.Trim();
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            File.Delete(path);
-        }
-        catch (IOException)
-        {
-            // A leftover temp file must not mask the outcome of arming the switch.
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
     }
 }

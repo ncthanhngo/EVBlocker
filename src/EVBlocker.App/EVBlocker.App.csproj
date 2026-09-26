@@ -12,6 +12,14 @@
     <!-- The icon Explorer and the taskbar show for the executable itself. -->
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
 
+    <!--
+      Packaging settings live in Properties/PublishProfiles/SelfContained.pubxml, not here.
+      RuntimeIdentifier and SelfContained are not publish-only: setting them on the project moves
+      every ordinary build into bin/Debug/net8.0-windows/win-x64/, leaving a stale executable at
+      the old path that keeps being launched and keeps looking like the code did not change.
+    -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
     <!-- WPF resolves types by reflection from XAML, so the trim analyser reports warnings it
          cannot prove either way. Trimming is configured for real in the packaging phase with
          TrimMode=partial; until then the analyser would only turn noise into build errors. -->

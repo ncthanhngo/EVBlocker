@@ -1,0 +1,56 @@
+# Builds the single-file executable and attaches it to a GitHub release.
+#
+# Triggered by a version tag, because the tag is what the in-app update check compares against:
+# publishing a release whose tag does not parse as a version means nobody is ever told about it.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Tests run before anything is published. A release that fails its own suite is worse than
+      # no release: the update check would offer it to everyone.
+      - name: Test
+        run: dotnet test --configuration Release --nologo
+
+      - name: Publish
+        run: dotnet publish src/EVBlocker.App/EVBlocker.App.csproj -p:PublishProfile=SelfContained --nologo
+
+      # The download is ~63 MB and self-contained; a sudden change in that means the publish
+      # settings moved and the artifact may no longer run on a machine without .NET.
+      - name: Check artifact
+        shell: pwsh
+        run: |
+          $exe = Get-Item artifacts/self-contained/EVBlocker.exe
+          $mb = [math]::Round($exe.Length / 1MB, 1)
+          Write-Host "EVBlocker.exe = $mb MB"
+          if ($mb -gt 80) { throw "Artifact is $mb MB, above the 80 MB budget." }
+          if ($mb -lt 40) { throw "Artifact is only $mb MB; a self-contained build should be larger." }
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/self-contained/EVBlocker.exe
+          generate_release_notes: true
+          body: |
+            Tải `EVBlocker.exe` bên dưới. Không cần cài .NET.
+
+            Chạy bằng **Run as administrator** khi cần ghi rule firewall, bật chặn outbound,
+            hoặc đọc lịch sử từ Security log. Xem kết nối hiện tại thì không cần quyền admin.
+
+            Tệp chưa được ký số, nên SmartScreen sẽ cảnh báo ở lần chạy đầu.

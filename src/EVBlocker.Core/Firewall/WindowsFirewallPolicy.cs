@@ -177,9 +177,16 @@ public sealed class WindowsFirewallPolicy : IFirewallPolicy
     }
 
     /// <summary>
-    /// Turns the COM access-denied HRESULT into an exception that says what to do about it.
-    /// Everything else is left alone rather than wrapped into something vaguer.
+    /// Replaces an access-denied failure with one that says what to do about it. Everything else
+    /// is left alone rather than wrapped into something vaguer.
     /// </summary>
+    /// <remarks>
+    /// Both shapes are caught because the runtime does not always leave a COMException to catch:
+    /// its HRESULT mapping turns E_ACCESSDENIED into an UnauthorizedAccessException before this
+    /// ever sees it, carrying the raw "Access is denied. (0x80070005)" text. Catching only
+    /// COMException made this method dead code for the exact case it exists to handle - visible
+    /// only once an unelevated run was actually tried.
+    /// </remarks>
     private static void Guard(Action action, string operation)
     {
         try
@@ -188,9 +195,14 @@ public sealed class WindowsFirewallPolicy : IFirewallPolicy
         }
         catch (COMException ex) when (ex.HResult == E_ACCESSDENIED)
         {
-            throw new UnauthorizedAccessException(
-                $"Cannot {operation}: changing Windows Firewall rules requires administrator rights.",
-                ex);
+            throw Denied(operation, ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            throw Denied(operation, ex);
         }
     }
+
+    private static UnauthorizedAccessException Denied(string operation, Exception inner) =>
+        new($"Cannot {operation}: this requires running EVBlocker as administrator.", inner);
 }
