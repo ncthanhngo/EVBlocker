@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Threading.Tasks;
 using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
+using EVBlocker.Core.Audit;
 using EVBlocker.Core.History;
 
 namespace EVBlocker.App.ViewModels;
@@ -51,23 +53,32 @@ public sealed class HistoryViewModel : ObservableObject
     private const int MaxEvents = 20_000;
 
     private readonly Func<IAttemptHistoryReader> _readerFactory;
+    private readonly Func<IAuditPolicy> _auditFactory;
     private readonly RelayCommand _refreshCommand;
+    private readonly RelayCommand _enableLoggingCommand;
 
     private LookbackOption _lookback;
     private string _status = string.Empty;
     private bool _isBusy;
+    private bool _loggingOn;
+    private string _setupMessage = string.Empty;
 
-    public HistoryViewModel(Func<IAttemptHistoryReader> readerFactory)
+    public HistoryViewModel(Func<IAttemptHistoryReader> readerFactory, Func<IAuditPolicy> auditFactory)
     {
         ArgumentNullException.ThrowIfNull(readerFactory);
+        ArgumentNullException.ThrowIfNull(auditFactory);
         _readerFactory = readerFactory;
+        _auditFactory = auditFactory;
 
         _lookback = LookbackOptions[1];
         _refreshCommand = new RelayCommand(() => _ = RefreshAsync(), () => !_isBusy);
+        _enableLoggingCommand = new RelayCommand(EnableLogging, () => ElevationService.IsElevated && !_loggingOn);
 
         _status = ElevationService.IsElevated
             ? "Bấm Tải lại để xem."
             : "Cần quyền quản trị để đọc nhật ký của Windows.";
+
+        ReadLoggingState();
     }
 
     public sealed record LookbackOption(string Label, TimeSpan Duration);
@@ -94,6 +105,79 @@ public sealed class HistoryViewModel : ObservableObject
     }
 
     public System.Windows.Input.ICommand RefreshCommand => _refreshCommand;
+
+    public System.Windows.Input.ICommand EnableLoggingCommand => _enableLoggingCommand;
+
+    /// <summary>
+    /// Why this page has nothing to show, and what to do about it. Empty once logging is on.
+    /// </summary>
+    /// <remarks>
+    /// Without this the page is a dead end: Windows records nothing until the Filtering Platform
+    /// Connection subcategory is switched on, so the grid stays empty however long the machine
+    /// runs, and the only way to fix it was a command copied out of the documentation. The
+    /// application already knew how to set it - the capability was simply never on screen.
+    /// </remarks>
+    public string SetupMessage
+    {
+        get => _setupMessage;
+        private set => SetProperty(ref _setupMessage, value);
+    }
+
+    public bool ShowSetup => _setupMessage.Length > 0;
+
+    /// <summary>Reads whether Windows is recording connection attempts at all.</summary>
+    /// <remarks>
+    /// The read itself needs administrator rights, so without them the answer is unknown rather
+    /// than "off" - and the message says which of the two it is instead of guessing.
+    /// </remarks>
+    private void ReadLoggingState()
+    {
+        if (!ElevationService.IsElevated)
+        {
+            _loggingOn = false;
+            SetupMessage = "Windows chỉ ghi lại các lần phần mềm cố ra internet sau khi bạn bật "
+                + "ghi nhật ký. Cần quyền quản trị để kiểm tra và bật.";
+            OnPropertyChanged(nameof(ShowSetup));
+            return;
+        }
+
+        try
+        {
+            _loggingOn = _auditFactory().GetConnectionAudit().HasFlag(AuditSetting.Failure);
+            SetupMessage = _loggingOn
+                ? string.Empty
+                : "Windows chưa ghi lại các lần phần mềm bị chặn. Bật ghi nhật ký để trang này "
+                  + "có dữ liệu — chỉ ghi từ lúc bật trở đi.";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            _loggingOn = false;
+            SetupMessage = $"Không kiểm tra được trạng thái ghi nhật ký: {ex.Message}";
+        }
+
+        OnPropertyChanged(nameof(ShowSetup));
+        _enableLoggingCommand.RaiseCanExecuteChanged();
+    }
+
+    private void EnableLogging()
+    {
+        try
+        {
+            IAuditPolicy policy = _auditFactory();
+
+            // Failures only. Recording successes as well means an event for every connection the
+            // machine makes, which fills the Security log in hours and buries what matters here.
+            policy.SetConnectionAudit(policy.GetConnectionAudit() | AuditSetting.Failure);
+
+            ReadLoggingState();
+            Status = "Đã bật ghi nhật ký. Windows chỉ ghi từ bây giờ — dùng máy một lúc rồi quay "
+                + "lại bấm Tải lại.";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            Status = $"Không bật được ghi nhật ký: {ex.Message}";
+        }
+    }
 
     /// <summary>
     /// Reads the log on a background thread.

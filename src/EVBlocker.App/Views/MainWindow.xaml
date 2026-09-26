@@ -124,6 +124,23 @@
                   Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}" />
         </StackPanel>
 
+        <!-- Windows records nothing here until the audit subcategory is switched on, so without
+             this panel the page is a blank grid that never fills, and the fix lived only in the
+             documentation as a command to copy. -->
+        <Border DockPanel.Dock="Top" Margin="0,0,0,14" Padding="16,12"
+                CornerRadius="{StaticResource ControlRadius}"
+                Background="{DynamicResource SurfaceSunkenBrush}"
+                BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
+                Visibility="{Binding ShowSetup, Converter={StaticResource BoolToVis}}">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
+                    Content="Bật ghi nhật ký" VerticalAlignment="Center" Margin="14,0,0,0"
+                    Command="{Binding EnableLoggingCommand}" />
+            <TextBlock Text="{Binding SetupMessage}" TextWrapping="Wrap" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+          </DockPanel>
+        </Border>
+
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0"
                    Style="{StaticResource MutedText}" Text="{Binding Status}" />
 
@@ -164,18 +181,27 @@
     <DataTemplate DataType="{x:Type vm:AllowListViewModel}">
       <DockPanel>
 
+        <!-- One way in, not four.
+             Adding used to be three buttons of equal weight beside a fourth route in the rail,
+             all ending in the same result, with nothing to say which to reach for. The choices
+             are now inside the one button, where they read as answers to "where from?". -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
-          <Button Content="Thêm ứng dụng…" Style="{StaticResource PrimaryButton}"
-                  Command="{Binding AddCommand}" />
-          <Button Content="Quét ứng dụng đang chạy" Margin="10,0,0,0"
-                  Command="{Binding ScanCommand}"
-                  ToolTip="Xem mọi phần mềm đang chạy và chọn cái nào được ra internet" />
-          <Button Content="Thêm ứng dụng phổ biến" Margin="10,0,0,0"
-                  Command="{Binding AddCommonCommand}"
-                  ToolTip="Tìm các phần mềm quen thuộc đã cài trên máy và cho phép chúng" />
+          <Button x:Name="AddAppButton" Content="Thêm phần mềm…"
+                  Style="{StaticResource PrimaryButton}" Click="OnOpenAddMenu">
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Từ phần mềm đang chạy…" Command="{Binding ScanCommand}" />
+                <MenuItem Header="Phần mềm quen thuộc đã cài" Command="{Binding AddCommonCommand}" />
+                <MenuItem Header="Chọn file trên máy…" Command="{Binding AddCommand}" />
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
           <Button Content="Bỏ cho phép" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
           <Button Content="Lưu vào tường lửa" Margin="10,0,0,0" Command="{Binding ApplyCommand}"
                   ToolTip="Ghi danh sách này vào tường lửa của Windows. Cần quyền quản trị." />
+          <TextBlock Text="Cả danh sách phần mềm đã cài nằm ở mục &quot;Phần mềm đã cài&quot;."
+                     VerticalAlignment="Center" Margin="16,0,0,0"
+                     Style="{StaticResource MutedText}" />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"
@@ -336,7 +362,28 @@
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <StackPanel>
 
-        <Border Style="{StaticResource Card}" Padding="20,16">
+        <!-- Moved out of the enforcement strip, where it was a second row on every screen.
+             It is a setting - whether the rules repair themselves at boot - not part of the
+             decision to block, and it reaches the enforcement view model through the window
+             because this template's own data context is the settings one. -->
+        <Border Style="{StaticResource Card}" Padding="20,16"
+                DataContext="{Binding DataContext.Enforcement,
+                              RelativeSource={RelativeSource AncestorType=Window}}">
+          <StackPanel>
+            <TextBlock Text="KHI MỞ MÁY" Style="{StaticResource SectionLabel}" />
+            <DockPanel Margin="0,10,0,0">
+              <Button DockPanel.Dock="Right" Content="{Binding StartupToggleLabel}"
+                      Command="{Binding ToggleStartupCommand}" VerticalAlignment="Center"
+                      Margin="12,0,0,0" />
+              <TextBlock Text="{Binding StartupTaskText}" VerticalAlignment="Center"
+                         TextWrapping="Wrap" />
+            </DockPanel>
+            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Style="{StaticResource MutedText}"
+                       Text="Việc chặn không cần mục này — Windows tự áp cấu hình tường lửa rất sớm khi mở máy. Mục này để phòng trường hợp danh sách bị phần mềm khác hoặc chính sách công ty xoá mất." />
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Padding="20,16" Margin="0,14,0,0">
           <StackPanel>
             <TextBlock Text="GIAO DIỆN" Style="{StaticResource SectionLabel}" />
             <CheckBox Content="Dùng giao diện tối" Margin="0,10,0,0"
@@ -448,115 +495,88 @@
           <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}"
                      Text="{Binding SelectedSection.Title}" Margin="0,0,0,14" />
 
-          <!-- Elevation warning. Present only when it applies, so it never becomes wallpaper. -->
-          <Border DockPanel.Dock="Top" Margin="0,0,0,14" Padding="14,10"
+          <!-- Elevation notice.
+               Deliberately not styled as a warning any more. Running without administrator
+               rights is the intended default - the application opens this way on purpose so it
+               never forces a UAC prompt just to look at a list - and an amber alert that is
+               present on every screen of every launch teaches people to stop reading alerts. -->
+          <Border DockPanel.Dock="Top" Margin="0,0,0,10" Padding="12,6"
                   CornerRadius="{StaticResource ControlRadius}"
                   Background="{DynamicResource SurfaceSunkenBrush}"
-                  BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1,1,1,1"
                   Visibility="{Binding ShowElevationBanner, Converter={StaticResource BoolToVis}}">
             <DockPanel>
-              <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
-                      Content="Chạy lại với quyền quản trị" VerticalAlignment="Center"
-                      Margin="14,0,0,0" Command="{Binding RelaunchElevatedCommand}" />
-              <!-- Amber carries the warning through the border, not the words. On the light
-                   palette the warning colour reaches about 3.8:1 against this surface, which is
-                   under the 4.5:1 body text needs; the border has no such requirement. -->
-              <TextBlock Text="{Binding ElevationMessage}" TextWrapping="Wrap"
-                         VerticalAlignment="Center"
-                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <Button DockPanel.Dock="Right" Content="Chạy lại với quyền quản trị"
+                      VerticalAlignment="Center" Margin="14,0,0,0"
+                      Command="{Binding RelaunchElevatedCommand}" />
+              <TextBlock Text="{Binding ElevationMessage}" VerticalAlignment="Center"
+                         TextTrimming="CharacterEllipsis"
+                         ToolTip="{Binding ElevationMessage}"
+                         Style="{StaticResource MutedText}" />
             </DockPanel>
           </Border>
 
-          <!-- Enforcement strip: the state of the one destructive setting, and the controls for
-               it. Kept above every section because it governs all of them. -->
-          <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="18,14" Margin="0,0,0,16"
+          <!-- Enforcement strip.
+               One line, because it sits above every section and the sections are what people
+               came for: as a card it took 170px of a 760px window on all five pages, leaving
+               seven visible rows in a list of a hundred connections. What moved out did not
+               disappear - the startup self-check is a setting and now lives in Settings, and the
+               per-profile detail only appears when the three profiles disagree. -->
+          <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="16,9" Margin="0,0,0,12"
                   DataContext="{Binding Enforcement}">
-            <StackPanel>
-              <Grid>
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <DockPanel>
 
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                  <TextBlock Text="CHẶN INTERNET" Style="{StaticResource SectionLabel}" />
-                  <TextBlock Text="{Binding StateText}" Margin="0,4,0,0" FontWeight="SemiBold">
-                    <TextBlock.Style>
-                      <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                        <Style.Triggers>
-                          <DataTrigger Binding="{Binding State}" Value="On">
-                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                          </DataTrigger>
-                          <DataTrigger Binding="{Binding State}" Value="Armed">
-                            <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
-                          </DataTrigger>
-                        </Style.Triggers>
-                      </Style>
-                    </TextBlock.Style>
-                  </TextBlock>
-                  <TextBlock Text="{Binding ProfileDetail}" Margin="0,3,0,0"
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                          Margin="14,0,0,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                            Visibility="{Binding ShowEnableControls, Converter={StaticResource BoolToVis}}">
+                  <TextBlock Text="Tự bỏ chặn sau" VerticalAlignment="Center" Margin="0,0,8,0"
                              Style="{StaticResource MutedText}" />
+                  <ComboBox Width="102" VerticalAlignment="Center"
+                            ItemsSource="{x:Static vm:EnforcementViewModel.RevertOptions}"
+                            SelectedItem="{Binding RevertAfter}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Content="Bắt đầu chặn" Margin="10,0,0,0"
+                          Style="{StaticResource PrimaryButton}" Command="{Binding EnableCommand}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                              Visibility="{Binding ShowEnableControls, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Tự bỏ chặn sau" VerticalAlignment="Center" Margin="0,0,8,0"
-                               Style="{StaticResource MutedText}" />
-                    <ComboBox Width="110" VerticalAlignment="Center"
-                              ItemsSource="{x:Static vm:EnforcementViewModel.RevertOptions}"
-                              SelectedItem="{Binding RevertAfter}">
-                      <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                          <TextBlock Text="{Binding Label}" />
-                        </DataTemplate>
-                      </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <Button Content="Bắt đầu chặn" Margin="10,0,0,0"
-                            Style="{StaticResource PrimaryButton}" Command="{Binding EnableCommand}" />
-                  </StackPanel>
+                <Button Content="Giữ nguyên" Style="{StaticResource PrimaryButton}"
+                        Command="{Binding ConfirmCommand}"
+                        Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
 
-                  <Button Content="Giữ nguyên" Style="{StaticResource PrimaryButton}"
-                          Command="{Binding ConfirmCommand}"
-                          Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
+                <Button Content="Ngừng chặn" Margin="10,0,0,0" Command="{Binding DisableCommand}" />
+              </StackPanel>
 
-                  <Button Content="Ngừng chặn" Margin="10,0,0,0" Command="{Binding DisableCommand}" />
-                </StackPanel>
-              </Grid>
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding StateText}" FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding State}" Value="On">
+                          <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="Armed">
+                          <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
 
-              <!-- Same reasoning as the banner: the countdown is body text and needs the
-                   readable colour, not the alert one. -->
-              <TextBlock Text="{Binding RevertCountdown}" Margin="0,10,0,0"
-                         Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12"
-                         FontWeight="SemiBold"
-                         Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
-
-              <!-- Persistence. Separated by a hairline because it is a different question from
-                   the one above it: not whether blocking is on, but whether it repairs itself. -->
-              <Border Margin="0,12,0,0" Padding="0,12,0,0" BorderThickness="0,1,0,0"
-                      BorderBrush="{DynamicResource HairlineBrush}">
-                <DockPanel>
-                  <Button DockPanel.Dock="Right" Content="{Binding StartupToggleLabel}"
-                          Command="{Binding ToggleStartupCommand}" VerticalAlignment="Center"
-                          Margin="12,0,0,0" />
-                  <TextBlock Text="{Binding StartupTaskText}" VerticalAlignment="Center"
-                             TextWrapping="Wrap">
-                    <TextBlock.Style>
-                      <Style TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
-                        <Style.Triggers>
-                          <DataTrigger Binding="{Binding StartupTaskInstalled}" Value="True">
-                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                          </DataTrigger>
-                        </Style.Triggers>
-                      </Style>
-                    </TextBlock.Style>
-                  </TextBlock>
-                </DockPanel>
-              </Border>
-
-              <TextBlock Text="{Binding Message}" Margin="0,8,0,0" TextWrapping="Wrap"
-                         Style="{StaticResource MutedText}" />
-            </StackPanel>
+                <!-- The countdown, the per-profile detail and the last result share this line:
+                     at most one of them has anything to say at any moment, and giving each its
+                     own row would put the card straight back. -->
+                <TextBlock Text="{Binding SecondLine}" Margin="0,2,0,0"
+                           TextTrimming="CharacterEllipsis" ToolTip="{Binding SecondLine}"
+                           Style="{StaticResource MutedText}"
+                           Visibility="{Binding HasSecondLine, Converter={StaticResource BoolToVis}}" />
+              </StackPanel>
+            </DockPanel>
           </Border>
 
           <ContentControl Content="{Binding SelectedSection.Content}" />

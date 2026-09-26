@@ -42,6 +42,29 @@ public partial class MainWindow : Window
             : new Thickness(6, 56, 0, 66);
     }
 
+    /// <summary>
+    /// Drops the button's menu under the button on a left click.
+    /// </summary>
+    /// <remarks>
+    /// A ContextMenu is used as the dropdown because WPF has no split button, and a context menu
+    /// otherwise opens on right click at the pointer. Placement is set here rather than in XAML
+    /// so the menu belongs to whichever button was pressed.
+    /// </remarks>
+    private void OnOpenAddMenu(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement button || button.ContextMenu is not { } menu)
+        {
+            return;
+        }
+
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+
+        // Inherited from the button, so the menu items bind to the same view model.
+        menu.DataContext = button.DataContext;
+        menu.IsOpen = true;
+    }
+
     private void OnMinimise(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
     private void OnMaximise(object sender, RoutedEventArgs e) =>

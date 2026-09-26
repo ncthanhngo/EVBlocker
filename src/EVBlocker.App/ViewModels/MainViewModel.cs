@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
+using EVBlocker.Core.Audit;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.History;
 using EVBlocker.Core.Installed;
@@ -21,7 +22,9 @@ public sealed class MainViewModel : ObservableObject
 
         // Built per read rather than held: the device map inside it refreshes on a miss, and a
         // long-lived instance would keep a map from whenever the app happened to start.
-        History = new HistoryViewModel(() => new WfpEventLogReader(new DevicePathMapper()));
+        History = new HistoryViewModel(
+            () => new WfpEventLogReader(new DevicePathMapper()),
+            () => new AuditPolicyManager());
 
         // Dot colours come from the shared palette's nav set, so a section here reads as the
         // same kind of thing as a section in the other EVSELab apps.

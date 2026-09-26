@@ -9,7 +9,7 @@ src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test đ�
   Monitor/    quét socket đang mở (P/Invoke iphlpapi), liệt kê ứng dụng đang chạy
   History/    đọc event WFP 5157/5156, map path kernel sang ổ đĩa
   Installed/  đọc danh sách phần mềm đã cài từ registry gỡ cài đặt
-  Audit/      bật/đọc audit policy qua auditpol
+  Audit/      bật/đọc audit policy qua auditpol (màn hình Đã thử kết nối gọi trực tiếp)
   Firewall/   COM INetFwPolicy2 + state machine enforcement
   Policy/     allow-list store, reconcile rule, danh mục ứng dụng phổ biến + dò đường dẫn
   Baseline/   danh sách service OS (JSON)

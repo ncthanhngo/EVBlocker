@@ -30,7 +30,15 @@ Bắt đầu chặn khi chưa biết máy cần gì là cách nhanh nhất để
 
 ### 1. Quan sát trước
 
-Bật audit policy để Windows ghi lại app nào cố ra internet. Chạy PowerShell **as Administrator**:
+Mở mục **Đã thử kết nối** và bấm **Bật ghi nhật ký**. Cần quyền quản trị.
+
+Windows không ghi lại việc phần mềm cố ra internet cho tới khi được bật, nên trước đó mục này
+trống dù máy chạy bao lâu. Ứng dụng chỉ bật phần ghi **lần bị chặn**; ghi thêm cả lần thành công
+sinh ra một sự kiện cho mỗi kết nối của máy và làm đầy nhật ký trong vài giờ.
+
+Chỉ ghi **từ lúc bật trở đi** — không có dữ liệu của quá khứ.
+
+Muốn làm bằng tay thì chạy PowerShell **as Administrator**:
 
 ```powershell
 auditpol /set /subcategory:"{0CCE9226-69AE-11D9-BED3-505054503030}" /failure:enable
@@ -38,10 +46,7 @@ auditpol /set /subcategory:"{0CCE9226-69AE-11D9-BED3-505054503030}" /failure:ena
 
 Dùng GUID chứ không dùng tên, vì tên subcategory bị dịch theo ngôn ngữ Windows.
 
-Chỉ bật `/failure` (event 5157 — bị chặn). Bật thêm `/success` sinh ra cực nhiều sự kiện và làm
-đầy Security log rất nhanh.
-
-Dùng máy vài ngày như bình thường, rồi xem tab **Đã thử kết nối**.
+Dùng máy vài ngày như bình thường, rồi quay lại mục đó và bấm **Tải lại**.
 
 ### 2. Dựng danh sách cho phép
 
@@ -99,15 +104,15 @@ Hai chỗ dễ sai đã được xử lý, nhưng nên biết:
 Git vẫn là ngoại lệ: mục Git ở đây chỉ ra các launcher trong thư mục gốc, không ra
 `git-remote-https.exe`. Dùng danh mục mặc định cho Git, đừng dựa vào màn hình này.
 
-Thêm thủ công, mục **Danh sách cho phép** có ba cách:
+Thêm thủ công: mục **Danh sách cho phép** → nút **Thêm phần mềm…**, chọn một trong ba:
 
-- **Quét ứng dụng đang chạy** — liệt kê mọi ứng dụng đang chạy trên máy, tích cái nào được ra
-  internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần trong thư mục Windows
-  bị ẩn mặc định, vì cho phép chúng theo đường dẫn hầu như luôn sai — baseline đã lo phần đó theo
-  tên service.
-- **Thêm ứng dụng phổ biến** — dò lại danh mục trên. Dùng khi vừa cài thêm một ứng dụng trong đó,
-  hoặc muốn lấy lại cái đã gỡ.
-- **Thêm ứng dụng…** — tự chọn file `.exe`.
+- **Từ phần mềm đang chạy** — liệt kê mọi phần mềm đang chạy trên máy, tích cái nào được ra
+  internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần của Windows bị ẩn mặc
+  định, vì cho phép chúng theo đường dẫn hầu như luôn sai — ứng dụng đã tự lo phần đó theo tên
+  dịch vụ.
+- **Phần mềm quen thuộc đã cài** — dò lại danh mục trên. Dùng khi vừa cài thêm một phần mềm trong
+  đó, hoặc muốn lấy lại cái đã gỡ.
+- **Chọn file trên máy…** — tự chọn file `.exe`.
 
 **Không cần tạo danh sách chặn riêng.** Khi bạn bắt đầu chặn, mọi thứ không nằm trong danh sách
 cho phép đều bị chặn. Một danh sách chặn tường minh còn yếu hơn: phần mềm cài sau lần quét sẽ
@@ -161,8 +166,8 @@ số đếm ngược.
 
 ## Tự kiểm tra lại khi mở máy
 
-Bật ở thanh trên cùng. Nó đăng ký một task chạy lúc khởi động để kiểm tra rule có bị thay đổi
-không, và áp lại nếu có.
+Bật ở mục **Cài đặt**. Nó đăng ký một task chạy lúc khởi động để kiểm tra danh sách có bị thay
+đổi không, và đặt lại nếu có.
 
 **Việc chặn không cần cái này.** `DefaultOutboundAction` và rule nằm trong cấu hình Windows
 Firewall, do service `MpsSvc` áp — service này chạy rất sớm trong quá trình khởi động, trước mọi

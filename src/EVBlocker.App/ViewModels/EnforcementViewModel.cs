@@ -77,7 +77,12 @@ public sealed class EnforcementViewModel : ObservableObject
         _disableCommand = new RelayCommand(Disable, () => State != EnforcementState.Off && ElevationService.IsElevated);
 
         _countdown = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _countdown.Tick += (_, _) => OnPropertyChanged(nameof(RevertCountdown));
+        _countdown.Tick += (_, _) =>
+        {
+            OnPropertyChanged(nameof(RevertCountdown));
+            OnPropertyChanged(nameof(SecondLine));
+            OnPropertyChanged(nameof(HasSecondLine));
+        };
 
         Refresh();
     }
@@ -116,7 +121,14 @@ public sealed class EnforcementViewModel : ObservableObject
     public string Message
     {
         get => _message;
-        private set => SetProperty(ref _message, value);
+        private set
+        {
+            if (SetProperty(ref _message, value))
+            {
+                OnPropertyChanged(nameof(SecondLine));
+                OnPropertyChanged(nameof(HasSecondLine));
+            }
+        }
     }
 
     public string StateText => State switch
@@ -131,12 +143,56 @@ public sealed class EnforcementViewModel : ObservableObject
 
     public bool ShowEnableControls => State == EnforcementState.Off;
 
-    /// <summary>Per-profile detail, shown because a partial state is otherwise invisible.</summary>
-    public string ProfileDetail => _status is null
-        ? string.Empty
-        : string.Join(
-            " · ",
-            _status.DefaultOutbound.Select(p => $"{p.Key}: {(p.Value == FirewallAction.Block ? "chặn" : "cho phép")}"));
+    /// <summary>
+    /// Per-profile detail, shown only when the profiles disagree.
+    /// </summary>
+    /// <remarks>
+    /// Domain, Private and Public are Windows' own names for network profiles, and reciting all
+    /// three on every screen spends a line of the window on vocabulary most people do not have.
+    /// When they all say the same thing, the state line above has already said it; when one
+    /// differs, that is a partial state nothing else would reveal.
+    /// </remarks>
+    public string ProfileDetail
+    {
+        get
+        {
+            if (_status is null || _status.DefaultOutbound.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            IReadOnlyList<FirewallAction> actions = _status.DefaultOutbound.Values.ToList();
+
+            return actions.All(action => action == actions[0])
+                ? string.Empty
+                : string.Join(
+                    " · ",
+                    _status.DefaultOutbound.Select(p => $"{p.Key}: {(p.Value == FirewallAction.Block ? "chặn" : "cho phép")}"));
+        }
+    }
+
+    /// <summary>
+    /// The one line under the state, chosen from whichever of three has something to say.
+    /// </summary>
+    /// <remarks>
+    /// Ordered by urgency: a countdown is about to change the machine, a split profile state is
+    /// unusual, and the result of the last action is the least pressing of the three. Giving
+    /// each its own row is what made this a card instead of a strip.
+    /// </remarks>
+    public string SecondLine
+    {
+        get
+        {
+            if (RevertCountdown.Length > 0)
+            {
+                return RevertCountdown;
+            }
+
+            return ProfileDetail.Length > 0 ? ProfileDetail : Message;
+        }
+    }
+
+    public bool HasSecondLine => SecondLine.Length > 0;
 
     public string RevertCountdown
     {
@@ -289,6 +345,8 @@ public sealed class EnforcementViewModel : ObservableObject
         OnPropertyChanged(nameof(StateText));
         OnPropertyChanged(nameof(ProfileDetail));
         OnPropertyChanged(nameof(RevertCountdown));
+        OnPropertyChanged(nameof(SecondLine));
+        OnPropertyChanged(nameof(HasSecondLine));
         OnPropertyChanged(nameof(ShowArmedControls));
         OnPropertyChanged(nameof(ShowEnableControls));
         OnPropertyChanged(nameof(StartupTaskInstalled));
