@@ -37,7 +37,7 @@ public sealed class AuditPolicyManager : IAuditPolicy
                 throw new InvalidOperationException(
                     $"auditpol /backup failed with exit code {result.ExitCode}. "
                     + "Reading audit policy requires administrator rights. "
-                    + Describe(result));
+                    + result.FailureDetail);
             }
 
             string csv = ReadTextDetectingEncoding(tempFile);
@@ -49,7 +49,7 @@ public sealed class AuditPolicyManager : IAuditPolicy
         }
         finally
         {
-            TryDelete(tempFile);
+            SafeFile.TryDelete(tempFile);
         }
     }
 
@@ -74,7 +74,7 @@ public sealed class AuditPolicyManager : IAuditPolicy
             throw new InvalidOperationException(
                 $"auditpol /set failed with exit code {result.ExitCode}. "
                 + "Changing audit policy requires administrator rights. "
-                + Describe(result));
+                + result.FailureDetail);
         }
     }
 
@@ -104,27 +104,5 @@ public sealed class AuditPolicyManager : IAuditPolicy
         return Encoding.UTF8.GetString(bytes);
     }
 
-    private static string Describe(ProcessResult result)
-    {
-        string detail = string.IsNullOrWhiteSpace(result.StandardError)
-            ? result.StandardOutput
-            : result.StandardError;
 
-        return string.IsNullOrWhiteSpace(detail) ? string.Empty : detail.Trim();
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            File.Delete(path);
-        }
-        catch (IOException)
-        {
-            // A leftover temp file is harmless and must not mask the real result.
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
-    }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using EVBlocker.Core.Internal;
 
 namespace EVBlocker.Core.Policy;
 
@@ -104,23 +105,9 @@ public sealed class AllowListStore
         {
             if (File.Exists(temporary))
             {
-                TryDelete(temporary);
+                SafeFile.TryDelete(temporary);
             }
         }
     }
 
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            File.Delete(path);
-        }
-        catch (IOException)
-        {
-            // A stray temp file is harmless and must not mask whatever actually went wrong.
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
-    }
 }

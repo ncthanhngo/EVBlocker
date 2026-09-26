@@ -13,7 +13,20 @@ namespace EVBlocker.App.Services;
 /// </remarks>
 public sealed class UserSettings
 {
-    public AppTheme Theme { get; set; } = AppTheme.Light;
+    /// <summary>
+    /// Stored by name, not as the enum.
+    /// </summary>
+    /// <remarks>
+    /// System.Text.Json writes an enum as its numeric value, so reordering AppTheme would
+    /// silently reinterpret every settings file already on disk and flip people's theme. A name
+    /// also survives an unknown value: anything unrecognised reads back as the default.
+    /// </remarks>
+    public string Theme { get; set; } = nameof(AppTheme.Light);
+
+    public AppTheme GetTheme() =>
+        Enum.TryParse(Theme, ignoreCase: true, out AppTheme parsed) ? parsed : AppTheme.Light;
+
+    public void SetTheme(AppTheme theme) => Theme = theme.ToString();
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]

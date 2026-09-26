@@ -51,7 +51,7 @@ public partial class App : Application
 
         // Applied before the window exists, so it opens in the chosen theme rather than flashing
         // the default one first.
-        ThemeManager.Apply(UserSettingsStore.Load().Theme);
+        ThemeManager.Apply(UserSettingsStore.Load().GetTheme());
 
         new MainWindow().Show();
     }

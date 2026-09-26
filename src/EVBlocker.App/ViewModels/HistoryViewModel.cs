@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Threading.Tasks;
 using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
 using EVBlocker.Core.History;
@@ -62,7 +63,7 @@ public sealed class HistoryViewModel : ObservableObject
         _readerFactory = readerFactory;
 
         _lookback = LookbackOptions[1];
-        _refreshCommand = new RelayCommand(Refresh, () => !_isBusy);
+        _refreshCommand = new RelayCommand(() => _ = RefreshAsync(), () => !_isBusy);
 
         _status = ElevationService.IsElevated
             ? "Bấm Tải lại để đọc nhật ký."
@@ -94,18 +95,35 @@ public sealed class HistoryViewModel : ObservableObject
 
     public System.Windows.Input.ICommand RefreshCommand => _refreshCommand;
 
-    private void Refresh()
+    /// <summary>
+    /// Reads the log on a background thread.
+    /// </summary>
+    /// <remarks>
+    /// The read walks up to twenty thousand event records and parses XML for each one. Doing that
+    /// on the dispatcher would lock the window for as long as it takes, with no way to tell
+    /// whether the app had hung. Only the assignment of the rows comes back to the UI thread.
+    ///
+    /// Every exception is turned into a status line rather than escaping, because this runs as a
+    /// fire-and-forget task from a command: an exception thrown here would surface as an
+    /// unobserved task exception, long after the button was pressed and far from it.
+    /// </remarks>
+    private async Task RefreshAsync()
     {
         _isBusy = true;
         _refreshCommand.RaiseCanExecuteChanged();
+        Status = "Đang đọc nhật ký…";
+
+        // Captured before leaving the UI thread; the user can change the selection while the
+        // read is running, and the result must describe the window that was actually read.
+        LookbackOption lookback = _lookback;
 
         try
         {
+            IReadOnlyList<AttemptSummary> summaries = await Task
+                .Run(() => _readerFactory().ReadSummaries(lookback.Duration, MaxEvents))
+                .ConfigureAwait(true);
+
             Rows.Clear();
-
-            IReadOnlyList<AttemptSummary> summaries =
-                _readerFactory().ReadSummaries(_lookback.Duration, MaxEvents);
-
             foreach (AttemptSummary summary in summaries)
             {
                 Rows.Add(new HistoryRowViewModel(summary));
@@ -115,7 +133,7 @@ public sealed class HistoryViewModel : ObservableObject
                 // An empty result is ambiguous, so name the likely cause rather than leaving the
                 // user staring at a blank grid.
                 ? "Không có sự kiện nào. Nhật ký chỉ có dữ liệu sau khi bật audit policy."
-                : string.Create(CultureInfo.CurrentCulture, $"{Rows.Count} ứng dụng trong {_lookback.Label.ToLowerInvariant()}.");
+                : string.Create(CultureInfo.CurrentCulture, $"{Rows.Count} ứng dụng trong {lookback.Label.ToLowerInvariant()}.");
         }
         catch (UnauthorizedAccessException)
         {
@@ -124,6 +142,10 @@ public sealed class HistoryViewModel : ObservableObject
         catch (System.Diagnostics.Eventing.Reader.EventLogException ex)
         {
             Status = $"Không đọc được Security log: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            Status = $"Lỗi khi đọc nhật ký: {ex.Message}";
         }
         finally
         {

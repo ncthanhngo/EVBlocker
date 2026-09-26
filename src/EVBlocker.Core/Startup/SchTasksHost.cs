@@ -48,12 +48,12 @@ public sealed class SchTasksHost : IScheduledTaskHost
             {
                 throw new InvalidOperationException(
                     $"Could not register scheduled task '{taskName}' (exit {result.ExitCode}). "
-                    + Describe(result));
+                    + result.FailureDetail);
             }
         }
         finally
         {
-            TryDelete(xmlFile);
+            SafeFile.TryDelete(xmlFile);
         }
     }
 
@@ -73,31 +73,9 @@ public sealed class SchTasksHost : IScheduledTaskHost
         {
             throw new InvalidOperationException(
                 $"Could not remove scheduled task '{taskName}' (exit {result.ExitCode}). "
-                + Describe(result));
+                + result.FailureDetail);
         }
     }
 
-    private static string Describe(ProcessResult result)
-    {
-        string detail = string.IsNullOrWhiteSpace(result.StandardError)
-            ? result.StandardOutput
-            : result.StandardError;
 
-        return detail.Trim();
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            File.Delete(path);
-        }
-        catch (IOException)
-        {
-            // A leftover temp file must not mask the outcome of the registration.
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
-    }
 }

@@ -70,7 +70,7 @@ public sealed class ConfigBackup : IConfigBackup
         if (!result.Succeeded || !File.Exists(path))
         {
             throw new InvalidOperationException(
-                $"Firewall export failed (exit {result.ExitCode}). {Describe(result)}");
+                $"Firewall export failed (exit {result.ExitCode}). {result.FailureDetail}");
         }
 
         Prune();
@@ -120,32 +120,16 @@ public sealed class ConfigBackup : IConfigBackup
         if (!result.Succeeded)
         {
             throw new InvalidOperationException(
-                $"Firewall import failed (exit {result.ExitCode}). {Describe(result)}");
+                $"Firewall import failed (exit {result.ExitCode}). {result.FailureDetail}");
         }
     }
 
     /// <summary>Deletes all but the newest <c>retain</c> backups. Returns how many were removed.</summary>
     public int Prune()
     {
-        int removed = 0;
-
-        foreach (BackupInfo old in List().Skip(_retain))
-        {
-            try
-            {
-                File.Delete(old.Path);
-                removed++;
-            }
-            catch (IOException)
-            {
-                // Failing to tidy an old backup must never break the operation that triggered it.
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-        }
-
-        return removed;
+        // Failing to tidy an old backup must never break the operation that triggered it, so a
+        // file that will not delete is skipped rather than counted.
+        return List().Skip(_retain).Count(old => SafeFile.TryDelete(old.Path));
     }
 
     internal static string BuildFileName(DateTimeOffset when) =>
@@ -171,12 +155,4 @@ public sealed class ConfigBackup : IConfigBackup
             : null;
     }
 
-    private static string Describe(ProcessResult result)
-    {
-        string detail = string.IsNullOrWhiteSpace(result.StandardError)
-            ? result.StandardOutput
-            : result.StandardError;
-
-        return detail.Trim();
-    }
 }

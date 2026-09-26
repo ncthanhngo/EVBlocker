@@ -39,7 +39,14 @@ public sealed class SettingsViewModel : ObservableObject
             }
 
             ThemeManager.Apply(target);
-            UserSettingsStore.Save(new UserSettings { Theme = target });
+
+            // Loaded, changed, saved - not replaced. Writing a fresh object would discard every
+            // other preference the file holds, which is a bug that only appears once a second
+            // setting exists and is then very hard to attribute.
+            UserSettings settings = UserSettingsStore.Load();
+            settings.SetTheme(target);
+            UserSettingsStore.Save(settings);
+
             OnPropertyChanged();
         }
     }
@@ -66,6 +73,13 @@ public sealed class SettingsViewModel : ObservableObject
 
             UpdateStatus = result.Message;
             _releaseUrl = result.ReleaseUrl;
+        }
+        catch (Exception ex)
+        {
+            // This runs as a fire-and-forget task from a command. UpdateChecker handles the
+            // failures it can name, but anything it does not would otherwise become an unobserved
+            // task exception - invisible, and detached from the button that caused it.
+            UpdateStatus = $"Lỗi khi kiểm tra bản mới: {ex.Message}";
         }
         finally
         {

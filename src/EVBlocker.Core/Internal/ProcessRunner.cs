@@ -6,6 +6,16 @@ namespace EVBlocker.Core.Internal;
 internal sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError)
 {
     public bool Succeeded => ExitCode == 0;
+
+    /// <summary>
+    /// Whatever the tool said about the failure, for an error message.
+    /// </summary>
+    /// <remarks>
+    /// Console tools are inconsistent about which stream they complain on - netsh and auditpol
+    /// both report some failures on stdout - so both are considered, stderr first.
+    /// </remarks>
+    public string FailureDetail =>
+        (string.IsNullOrWhiteSpace(StandardError) ? StandardOutput : StandardError).Trim();
 }
 
 /// <summary>
