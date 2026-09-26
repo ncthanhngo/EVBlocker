@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
+using EVBlocker.Core.Firewall;
 using EVBlocker.Core.History;
 using EVBlocker.Core.Monitor;
+using EVBlocker.Core.Policy;
 
 namespace EVBlocker.App.ViewModels;
 
@@ -21,16 +23,17 @@ public sealed class MainViewModel : ObservableObject
 
         // Dot colours come from the shared palette's nav set, so a section here reads as the
         // same kind of thing as a section in the other EVSELab apps.
+        AllowList = new AllowListViewModel(
+            new AllowListStore(AllowListStore.DefaultPath),
+            () => new WindowsFirewallPolicy(),
+            PickExecutables,
+            Confirm);
+
         Sections = new ObservableCollection<NavSectionViewModel>
         {
             new("Đang kết nối", "#5AA9FF", ActiveConnections),
             new("Đã thử kết nối", "#F5B93B", History),
-            new(
-                "Allow-list",
-                "#2BD673",
-                new PlaceholderViewModel(
-                    "Chưa khả dụng",
-                    "Danh sách ứng dụng được phép ra internet sẽ có ở Phase 02, cùng engine tạo rule trong Windows Firewall.")),
+            new("Allow-list", "#2BD673", AllowList),
         };
 
         _selectedSection = Sections[0];
@@ -48,6 +51,8 @@ public sealed class MainViewModel : ObservableObject
     public ActiveConnectionsViewModel ActiveConnections { get; }
 
     public HistoryViewModel History { get; }
+
+    public AllowListViewModel AllowList { get; }
 
     public System.Windows.Input.ICommand RelaunchElevatedCommand { get; }
 
@@ -68,6 +73,30 @@ public sealed class MainViewModel : ObservableObject
         : "Không kiểm tra được · cần Admin";
 
     public string ElevationBadge => ElevationService.IsElevated ? "Administrator" : "Quyền hạn chế";
+
+    /// <summary>
+    /// The two WPF-facing pieces the allow-list needs. Passed in as delegates so that view model
+    /// stays free of any reference to a dialog or a window.
+    /// </summary>
+    private static string[]? PickExecutables()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Chọn ứng dụng được phép ra internet",
+            Filter = "Ứng dụng (*.exe)|*.exe",
+            Multiselect = true,
+            CheckFileExists = true,
+        };
+
+        return dialog.ShowDialog() == true ? dialog.FileNames : null;
+    }
+
+    private static bool Confirm(string title, string message) =>
+        System.Windows.MessageBox.Show(
+            message,
+            title,
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Yes;
 
     private static void RelaunchElevated()
     {

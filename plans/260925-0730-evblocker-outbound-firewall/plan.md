@@ -1,6 +1,6 @@
 # EVBlocker — Outbound allow-list firewall cho Windows 10/11
 
-**Status:** Phase 01 xong + verified. UI shell đã dựng sớm (xem ghi chú dưới). Tiếp theo: Phase 02.
+**Status:** Phase 01 và 02 xong. Tiếp theo: Phase 03 (safety layer) — bắt buộc trước Phase 04.
 **Ngày tạo:** 2026-09-25
 **Cập nhật:** 2026-09-26
 
