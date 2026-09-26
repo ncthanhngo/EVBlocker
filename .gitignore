@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# The *.app rule above is meant for macOS application bundles, but it also matches this
+# project directory, which silently excluded the entire WPF app from the repository.
+!src/EVBlocker.App/
