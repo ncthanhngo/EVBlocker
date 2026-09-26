@@ -89,6 +89,23 @@ Baseline allow-list là **file JSON**, không phải code — nâng cấp danh s
 
 06 làm được song song sau 02.
 
+## Kiểm chứng đường ghi
+
+Các thao tác cần quyền admin không unit test được, nên Phase 02-04 đều ghi "chưa verify". Công cụ
+đóng khoảng trống đó:
+
+```powershell
+# PowerShell chạy as Administrator
+.\tools\EVBlocker.Verify\bin\Debug\net8.0-windows\EVBlocker.Verify.exe
+```
+
+Kiểm tạo/đọc/xoá rule, `netsh advfirewall export`, và đăng ký task dưới SYSTEM. **Không bật
+default-deny** — đọc `DefaultOutboundAction` ở đầu và cuối, khác nhau là FAIL. Mỗi thao tác ghi
+được xác nhận độc lập qua PowerShell, không đọc lại bằng chính code vừa ghi.
+
+Là console app chứ không phải `.ps1` vì PowerShell 5.1 không nạp được assembly .NET 8 — script
+sẽ phải gọi `netsh`/`schtasks` trực tiếp, tức là kiểm chứng Windows chứ không kiểm chứng code.
+
 ## Acceptance criteria (toàn dự án)
 
 - [ ] Scan liệt kê đúng process đang có kết nối ra IP public, kèm đường dẫn exe
