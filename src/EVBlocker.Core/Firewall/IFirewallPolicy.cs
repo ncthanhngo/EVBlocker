@@ -27,4 +27,21 @@ public interface IFirewallPolicy
     /// error: the desired end state is the same either way.
     /// </summary>
     void RemoveRule(string name);
+
+    /// <summary>
+    /// What happens to outbound traffic that no rule matches, per profile.
+    /// </summary>
+    /// <remarks>
+    /// Windows allows unmatched outbound traffic by default, so this reads Allow on a machine
+    /// nobody has configured. Blocking it is what turns an allow-list from a list of exceptions
+    /// into the policy, and is the single most destructive setting this app touches.
+    ///
+    /// This reports the effective action, not how it was configured. A profile nobody has touched
+    /// shows as NotConfigured in Get-NetFirewallProfile and reads as Allow here, because the COM
+    /// enum has only Block and Allow. Verified against a machine in that state.
+    /// </remarks>
+    IReadOnlyDictionary<FirewallProfile, FirewallAction> GetDefaultOutboundActions();
+
+    /// <summary>Sets the default outbound action for one profile.</summary>
+    void SetDefaultOutboundAction(FirewallProfile profile, FirewallAction action);
 }

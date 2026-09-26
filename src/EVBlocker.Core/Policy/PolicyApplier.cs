@@ -90,9 +90,18 @@ public sealed class PolicyApplier
     }
 
     /// <summary>Works out what would change, without touching the firewall.</summary>
-    public PolicyDiff Plan(AllowListDocument allowList)
+    public PolicyDiff Plan(AllowListDocument allowList) => Plan(BuildDesired(allowList));
+
+    /// <summary>
+    /// Overload taking the rules directly, so a caller can reconcile against more than the
+    /// allow-list. Enforcement needs the OS baseline applied alongside it, and the two have to be
+    /// diffed together: planning them separately would have each view the other's rules as
+    /// unwanted and delete them.
+    /// </summary>
+    public PolicyDiff Plan(IReadOnlyList<FirewallRuleSpec> desired)
     {
-        IReadOnlyList<FirewallRuleSpec> desired = BuildDesired(allowList);
+        ArgumentNullException.ThrowIfNull(desired);
+
         IReadOnlyList<FirewallRuleSpec> actual = _policy.GetRulesInGroup(FirewallRuleNaming.Group);
 
         var actualByName = new Dictionary<string, FirewallRuleSpec>(StringComparer.OrdinalIgnoreCase);
@@ -139,9 +148,12 @@ public sealed class PolicyApplier
     /// Removals run before additions so a rename frees its old name first, and so a run that
     /// fails part way leaves fewer allowances than intended rather than more.
     /// </remarks>
-    public PolicyDiff Apply(AllowListDocument allowList)
+    public PolicyDiff Apply(AllowListDocument allowList) => Apply(BuildDesired(allowList));
+
+    /// <summary>Overload taking the rules directly; see the note on the matching Plan overload.</summary>
+    public PolicyDiff Apply(IReadOnlyList<FirewallRuleSpec> desired)
     {
-        PolicyDiff diff = Plan(allowList);
+        PolicyDiff diff = Plan(desired);
 
         foreach (FirewallRuleSpec rule in diff.ToRemove)
         {

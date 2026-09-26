@@ -220,5 +220,12 @@ public sealed class PolicyApplierTests
         }
 
         public void RemoveRule(string name) => Removed.Add(name);
+
+        // Not part of what this fake exists to misbehave about.
+        public IReadOnlyDictionary<FirewallProfile, FirewallAction> GetDefaultOutboundActions() =>
+            new Dictionary<FirewallProfile, FirewallAction>();
+
+        public void SetDefaultOutboundAction(FirewallProfile profile, FirewallAction action) =>
+            throw new NotSupportedException();
     }
 }

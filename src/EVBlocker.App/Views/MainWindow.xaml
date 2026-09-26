@@ -280,26 +280,70 @@
             </DockPanel>
           </Border>
 
-          <!-- Status strip: the two facts that decide what the rest of the window can do. -->
-          <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="18,12" Margin="0,0,0,16">
-            <Grid>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
+          <!-- Enforcement strip: the state of the one destructive setting, and the controls for
+               it. Kept above every section because it governs all of them. -->
+          <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="18,14" Margin="0,0,0,16"
+                  DataContext="{Binding Enforcement}">
+            <StackPanel>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-              <StackPanel Grid.Column="0">
-                <TextBlock Text="CHẶN OUTBOUND" Style="{StaticResource SectionLabel}" />
-                <TextBlock Text="{Binding EnforcementStatus}" Margin="0,4,0,0"
-                           Style="{StaticResource SecondaryText}" />
-              </StackPanel>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                  <TextBlock Text="CHẶN OUTBOUND" Style="{StaticResource SectionLabel}" />
+                  <TextBlock Text="{Binding StateText}" Margin="0,4,0,0" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding State}" Value="On">
+                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                          </DataTrigger>
+                          <DataTrigger Binding="{Binding State}" Value="Armed">
+                            <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                  <TextBlock Text="{Binding ProfileDetail}" Margin="0,3,0,0"
+                             Style="{StaticResource MutedText}" />
+                </StackPanel>
 
-              <StackPanel Grid.Column="1">
-                <TextBlock Text="AUDIT POLICY" Style="{StaticResource SectionLabel}" />
-                <TextBlock Text="{Binding AuditStatus}" Margin="0,4,0,0"
-                           Style="{StaticResource SecondaryText}" />
-              </StackPanel>
-            </Grid>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                              Visibility="{Binding ShowEnableControls, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Tự khôi phục sau" VerticalAlignment="Center" Margin="0,0,8,0"
+                               Style="{StaticResource MutedText}" />
+                    <ComboBox Width="110" VerticalAlignment="Center"
+                              ItemsSource="{x:Static vm:EnforcementViewModel.RevertOptions}"
+                              SelectedItem="{Binding RevertAfter}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding Label}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Bật chặn outbound" Margin="10,0,0,0"
+                            Style="{StaticResource PrimaryButton}" Command="{Binding EnableCommand}" />
+                  </StackPanel>
+
+                  <Button Content="Giữ cấu hình" Style="{StaticResource PrimaryButton}"
+                          Command="{Binding ConfirmCommand}"
+                          Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
+
+                  <Button Content="Tắt chặn" Margin="10,0,0,0" Command="{Binding DisableCommand}" />
+                </StackPanel>
+              </Grid>
+
+              <TextBlock Text="{Binding RevertCountdown}" Margin="0,10,0,0"
+                         Foreground="{DynamicResource WarningBrush}" FontSize="12"
+                         Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
+
+              <TextBlock Text="{Binding Message}" Margin="0,8,0,0" TextWrapping="Wrap"
+                         Style="{StaticResource MutedText}" />
+            </StackPanel>
           </Border>
 
           <ContentControl Content="{Binding SelectedSection.Content}" />
@@ -332,7 +376,7 @@
                    FontSize="11" FontWeight="SemiBold" />
 
         <TextBlock DockPanel.Dock="Bottom" Margin="18,0,14,0" TextWrapping="Wrap"
-                   Text="Phase 02 · allow-list" FontSize="11"
+                   Text="Phase 04 · enforcement" FontSize="11"
                    Foreground="{DynamicResource SidebarMutedBrush}" Opacity="0.75" />
 
         <ListBox Style="{StaticResource RailList}"

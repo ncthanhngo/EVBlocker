@@ -85,6 +85,30 @@ public sealed class WindowsFirewallPolicy : IFirewallPolicy
             $"remove rule '{name}'");
     }
 
+    public IReadOnlyDictionary<FirewallProfile, FirewallAction> GetDefaultOutboundActions()
+    {
+        INetFwPolicy2 policy = CreatePolicy();
+
+        return Enum.GetValues<FirewallProfile>().ToDictionary(
+            profile => profile,
+            profile => (FirewallAction)policy.get_DefaultOutboundAction((NET_FW_PROFILE_TYPE2)profile));
+    }
+
+    public void SetDefaultOutboundAction(FirewallProfile profile, FirewallAction action)
+    {
+        // Rejected up front rather than letting a cast produce a profile Windows does not know.
+        if (!Enum.IsDefined(profile))
+        {
+            throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown network profile.");
+        }
+
+        Guard(
+            () => CreatePolicy().put_DefaultOutboundAction(
+                (NET_FW_PROFILE_TYPE2)profile,
+                (NET_FW_ACTION)action),
+            $"set the default outbound action for the {profile} profile");
+    }
+
     private static INetFwPolicy2 CreatePolicy() => (INetFwPolicy2)new NetFwPolicy2();
 
     private static FirewallRuleSpec Read(INetFwRule rule, string? grouping) => new()

@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
 using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
+using EVBlocker.Core.Baseline;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.History;
 using EVBlocker.Core.Monitor;
 using EVBlocker.Core.Policy;
+using EVBlocker.Core.Safety;
 
 namespace EVBlocker.App.ViewModels;
 
@@ -23,10 +25,21 @@ public sealed class MainViewModel : ObservableObject
 
         // Dot colours come from the shared palette's nav set, so a section here reads as the
         // same kind of thing as a section in the other EVSELab apps.
+        var store = new AllowListStore(AllowListStore.DefaultPath);
+
         AllowList = new AllowListViewModel(
-            new AllowListStore(AllowListStore.DefaultPath),
+            store,
             () => new WindowsFirewallPolicy(),
             PickExecutables,
+            Confirm);
+
+        Enforcement = new EnforcementViewModel(
+            new EnforcementController(
+                new WindowsFirewallPolicy(),
+                new ConfigBackup(ConfigBackup.DefaultDirectory),
+                new ScheduledTaskDeadManSwitch(),
+                new OsBaseline()),
+            store,
             Confirm);
 
         Sections = new ObservableCollection<NavSectionViewModel>
@@ -54,6 +67,8 @@ public sealed class MainViewModel : ObservableObject
 
     public AllowListViewModel AllowList { get; }
 
+    public EnforcementViewModel Enforcement { get; }
+
     public System.Windows.Input.ICommand RelaunchElevatedCommand { get; }
 
     public bool ShowElevationBanner => !ElevationService.IsElevated;
@@ -61,16 +76,6 @@ public sealed class MainViewModel : ObservableObject
     public string ElevationMessage =>
         "Đang chạy không có quyền Admin — đường dẫn của phần lớn tiến trình sẽ trống "
         + "và không đọc được lịch sử từ Security log.";
-
-    /// <summary>
-    /// Enforcement is not implemented yet. Stated plainly so the status strip cannot be read as
-    /// "blocking is available but switched off".
-    /// </summary>
-    public string EnforcementStatus => "Chưa khả dụng · Phase 04";
-
-    public string AuditStatus => ElevationService.IsElevated
-        ? "Cần bật để có dữ liệu lịch sử"
-        : "Không kiểm tra được · cần Admin";
 
     public string ElevationBadge => ElevationService.IsElevated ? "Administrator" : "Quyền hạn chế";
 

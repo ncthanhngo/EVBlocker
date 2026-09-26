@@ -17,7 +17,7 @@ public sealed record BackupInfo(string Path, DateTimeOffset CreatedAt);
 /// netsh is used rather than COM because the firewall COM API has no export or import: there is
 /// no way to capture the whole configuration through it.
 /// </remarks>
-public sealed class ConfigBackup
+public sealed class ConfigBackup : IConfigBackup
 {
     /// <summary>
     /// Windows' own extension for an exported policy, so the files are recognisable and can be

@@ -1,7 +1,56 @@
 # Phase 04 — Enforcement + UI
 
-**Status:** chưa làm — **phụ thuộc Phase 03, không được làm trước**
+**Status:** code xong. **Chưa bật thật lần nào** — cần admin, và có chủ ý không bật trên máy dev.
 **Chạm firewall:** có, rủi ro cao nhất của dự án
+
+## Lệch so với plan: trạng thái suy ra, không có state.json
+
+Plan định lưu trạng thái vào `state.json`. Bỏ, vì trạng thái **suy ra được hoàn toàn từ máy**:
+
+| Quan sát | Trạng thái |
+|---|---|
+| Không profile nào chặn | `Off` |
+| Có chặn + có task revert đang chờ | `Armed` |
+| Có chặn + không có task revert | `On` |
+
+Việc chặn nằm trong config firewall, revert đang chờ nằm trong Task Scheduler — cả hai sống lâu
+hơn process và đều có thể bị người khác đổi. Một file trạng thái là **ý kiến thứ hai có thể mâu
+thuẫn với cả hai**, mà đúng lúc mâu thuẫn là lúc người ta cần biết sự thật. Bỏ file cũng bỏ luôn
+nguy cơ file hỏng.
+
+Hệ quả: app **không biết thời điểm revert** nếu không phải chính phiên đó arm. UI nói thẳng điều
+đó thay vì bịa ra một countdown.
+
+## Phát hiện: COM báo `Allow` ở chỗ PowerShell báo `NotConfigured`
+
+`NET_FW_ACTION` chỉ có `Block` và `Allow` — không có `NotConfigured`. Nên COM trả về **hành vi
+hiệu dụng**, còn `Get-NetFirewallProfile` trả về **cách cấu hình**. Đã đo trên máy chưa từng chỉnh:
+COM = `Allow`, PowerShell = `NotConfigured`.
+
+Hệ quả thật: `Disable()` đặt `Allow` **tường minh**, không đưa profile về `NotConfigured` được.
+Trên máy độc lập thì giống hệt nhau. Trên máy do Group Policy quản, đặt giá trị cục bộ tường minh
+là một thay đổi đáng biết — muốn hoàn nguyên chính xác thì phải `ConfigBackup.Restore`.
+
+## Thứ tự trong `Enable()` chính là lập luận an toàn
+
+```
+đọc trạng thái -> nạp baseline -> BACKUP -> ghi rule -> ARM revert -> MỚI chặn
+```
+
+Chặn là bước **cuối cùng**, sau khi đường lui đã tồn tại. Process chết ở bất kỳ điểm nào sau khi
+arm thì revert vẫn chạy; chết trước đó thì chưa có gì bị chặn. Có test riêng cho từng nhánh hỏng.
+
+## Kết quả verify (2026-09-26)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `dotnet test` | 177/177 pass (+18 cho Phase 04) |
+| `get_DefaultOutboundAction` qua COM | đọc được không cần admin, 3/3 profile |
+| `BuildDesiredRules` | 10 baseline rule, tất cả scope theo service, `ApplicationPath = null` |
+| `GetStatus()` trên máy thật | `state=Off revertPending=False` — khớp thực tế |
+| UI enforcement strip | render đúng, nút disabled chính xác khi không có admin |
+
+**Chưa verify:** `Enable`/`Confirm`/`Disable` chạy thật. Cần admin, và cố ý không chạy trên máy này.
 
 ## Requirements
 

@@ -1,6 +1,6 @@
 # EVBlocker — Outbound allow-list firewall cho Windows 10/11
 
-**Status:** Phase 01, 02, 03 xong. Tiếp theo: Phase 04 (enforcement) — tiền đề Phase 03 đã có.
+**Status:** Phase 01-04 xong (chưa bật enforcement thật). Tiếp theo: Phase 05 (startup/reconciler).
 **Ngày tạo:** 2026-09-25
 **Cập nhật:** 2026-09-26
 
@@ -47,7 +47,7 @@ không popup UAC.
 |---|---|---|
 | Runtime | .NET 8 (SDK 8.0.423 có sẵn) | WindowsDesktop runtime đã có trên máy |
 | UI | WPF + MVVM | Native, mượt, không cần webview |
-| Firewall API | COM `INetFwPolicy2` qua `[GeneratedComInterface]` | Nhanh, type-safe, trim-friendly. Không shell ra netsh/PowerShell |
+| Firewall API | COM `INetFwPolicy2`, interop sinh bằng **CsWin32** | Vtable đến từ metadata Win32 chính thức, không từ trí nhớ. Xem phase-02 |
 | Active connections | P/Invoke `GetExtendedTcpTable` / `GetExtendedUdpTable` | Không spawn process, đủ nhanh để poll 1s |
 | History | Event Log 5157/5156 qua `EventLogQuery` | Dữ liệu sẵn có, không cần driver |
 | Đóng gói | Self-contained single-file, trimmed (~65 MB) | Chạy trên máy trắng, không cần cài runtime |

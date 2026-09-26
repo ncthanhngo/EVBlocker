@@ -14,6 +14,19 @@ public enum FirewallAction
     Allow = 1,
 }
 
+/// <summary>
+/// A single network profile. Separate from <see cref="FirewallProfiles"/> on purpose: a rule
+/// applies to a set of profiles, whereas a default action belongs to exactly one, and the API
+/// that reads a default action cannot answer for a combination. Two types make the difference
+/// impossible to get wrong by passing the flags value.
+/// </summary>
+public enum FirewallProfile
+{
+    Domain = 1,
+    Private = 2,
+    Public = 4,
+}
+
 /// <summary>Matches NET_FW_PROFILE_TYPE2.</summary>
 [Flags]
 public enum FirewallProfiles
