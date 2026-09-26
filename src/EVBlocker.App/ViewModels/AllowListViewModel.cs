@@ -12,6 +12,9 @@ using EVBlocker.Core.Policy;
 
 namespace EVBlocker.App.ViewModels;
 
+/// <summary>An executable picked out of the scan dialog.</summary>
+public sealed record ScannedSelection(string Name, string ExecutablePath);
+
 /// <summary>One allowed executable, as the grid shows it.</summary>
 public sealed class AllowedAppRowViewModel
 {
@@ -62,10 +65,12 @@ public sealed class AllowListViewModel : ObservableObject
     private readonly AllowListStore _store;
     private readonly Func<IFirewallPolicy> _policyFactory;
     private readonly Func<string[]?> _pickFiles;
+    private readonly Func<IReadOnlyList<ScannedSelection>?> _pickRunningApps;
     private readonly Func<string, string, bool> _confirm;
 
     private readonly RelayCommand _addCommand;
     private readonly RelayCommand _addCommonCommand;
+    private readonly RelayCommand _scanCommand;
     private readonly RelayCommand _removeCommand;
     private readonly RelayCommand _applyCommand;
 
@@ -82,20 +87,24 @@ public sealed class AllowListViewModel : ObservableObject
         AllowListStore store,
         Func<IFirewallPolicy> policyFactory,
         Func<string[]?> pickFiles,
+        Func<IReadOnlyList<ScannedSelection>?> pickRunningApps,
         Func<string, string, bool> confirm)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(policyFactory);
         ArgumentNullException.ThrowIfNull(pickFiles);
+        ArgumentNullException.ThrowIfNull(pickRunningApps);
         ArgumentNullException.ThrowIfNull(confirm);
 
         _store = store;
         _policyFactory = policyFactory;
         _pickFiles = pickFiles;
+        _pickRunningApps = pickRunningApps;
         _confirm = confirm;
 
         _addCommand = new RelayCommand(Add, () => !_loadFailed);
         _addCommonCommand = new RelayCommand(AddCommonApps, () => !_loadFailed);
+        _scanCommand = new RelayCommand(ScanRunningApps, () => !_loadFailed);
         _removeCommand = new RelayCommand(RemoveSelected, () => _selected is not null && !_loadFailed);
         _applyCommand = new RelayCommand(ApplyToFirewall, () => !_loadFailed);
 
@@ -125,6 +134,8 @@ public sealed class AllowListViewModel : ObservableObject
     public System.Windows.Input.ICommand AddCommand => _addCommand;
 
     public System.Windows.Input.ICommand AddCommonCommand => _addCommonCommand;
+
+    public System.Windows.Input.ICommand ScanCommand => _scanCommand;
 
     public System.Windows.Input.ICommand RemoveCommand => _removeCommand;
 
@@ -172,6 +183,7 @@ public sealed class AllowListViewModel : ObservableObject
     {
         _addCommand.RaiseCanExecuteChanged();
         _addCommonCommand.RaiseCanExecuteChanged();
+        _scanCommand.RaiseCanExecuteChanged();
         _removeCommand.RaiseCanExecuteChanged();
         _applyCommand.RaiseCanExecuteChanged();
     }
@@ -234,6 +246,63 @@ public sealed class AllowListViewModel : ObservableObject
     /// Windows accepts and that then allows nothing - the worst kind of failure, because the
     /// allow-list would look correct.
     /// </remarks>
+    /// <summary>
+    /// Opens the scan dialog and adds whatever the user ticked.
+    /// </summary>
+    /// <remarks>
+    /// No block rules are written for the ones left unticked. Default-deny already blocks
+    /// everything without an allow rule, and an explicit block list would be strictly weaker:
+    /// anything installed after the scan would not be on it, and would therefore be allowed.
+    /// </remarks>
+    private void ScanRunningApps()
+    {
+        IReadOnlyList<ScannedSelection>? picked = _pickRunningApps();
+        if (picked is null || picked.Count == 0)
+        {
+            return;
+        }
+
+        var added = new List<string>();
+
+        foreach (ScannedSelection app in picked)
+        {
+            if (_document.Apps.Any(a =>
+                    string.Equals(a.ExecutablePath, app.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            if (Interpreters.Contains(app.Name)
+                && !_confirm(
+                    "Cho phép công cụ này?",
+                    $"{app.Name} có thể chạy mã tuỳ ý. Cho phép nó ra internet nghĩa là cho phép "
+                    + "mọi script chạy qua nó ra internet.\n\nVẫn thêm?"))
+            {
+                continue;
+            }
+
+            _document.Apps.Add(new AllowedApp
+            {
+                ExecutablePath = app.ExecutablePath,
+                DisplayName = app.Name,
+                Sha256 = TryHash(app.ExecutablePath),
+                AddedAt = DateTimeOffset.Now,
+            });
+
+            added.Add(app.Name);
+        }
+
+        if (added.Count == 0)
+        {
+            Status = "Những ứng dụng đã chọn đều có sẵn trong danh sách.";
+            return;
+        }
+
+        _store.Save(_document);
+        Refresh();
+        Status = $"Đã thêm {added.Count} ứng dụng từ kết quả quét. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+    }
+
     private void AddCommonApps()
     {
         IReadOnlyList<DiscoveredApp> discovered;

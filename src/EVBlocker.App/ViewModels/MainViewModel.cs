@@ -30,6 +30,7 @@ public sealed class MainViewModel : ObservableObject
             store,
             () => new WindowsFirewallPolicy(),
             PickExecutables,
+            PickRunningApps,
             Confirm);
 
         Enforcement = new EnforcementViewModel(
@@ -102,6 +103,32 @@ public sealed class MainViewModel : ObservableObject
         };
 
         return dialog.ShowDialog() == true ? dialog.FileNames : null;
+    }
+
+    /// <summary>
+    /// Opens the scan dialog and returns what the user ticked, or null if they cancelled.
+    /// </summary>
+    /// <remarks>
+    /// Owned by the main window so the dialog is modal to it and centres on it; without an owner
+    /// a modal dialog can end up behind the window it belongs to.
+    /// </remarks>
+    private static IReadOnlyList<ScannedSelection>? PickRunningApps()
+    {
+        var window = new Views.ScanWindow(
+            new ScanViewModel(
+                new RunningAppScanner(),
+                () => CoreServices.CreateAllowListStore().Load().Apps
+                    .Select(a => a.ExecutablePath)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase)))
+        {
+            Owner = System.Windows.Application.Current.MainWindow,
+        };
+
+        return window.ShowDialog() == true
+            ? window.Selected
+                .Select(a => new ScannedSelection(a.Name, a.ExecutablePath))
+                .ToList()
+            : null;
     }
 
     private static bool Confirm(string title, string message) =>

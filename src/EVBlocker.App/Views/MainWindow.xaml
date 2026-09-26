@@ -145,6 +145,9 @@
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
           <Button Content="Thêm ứng dụng…" Style="{StaticResource PrimaryButton}"
                   Command="{Binding AddCommand}" />
+          <Button Content="Quét ứng dụng đang chạy" Margin="10,0,0,0"
+                  Command="{Binding ScanCommand}"
+                  ToolTip="Liệt kê mọi ứng dụng đang chạy để chọn cái nào được ra internet" />
           <Button Content="Thêm ứng dụng phổ biến" Margin="10,0,0,0"
                   Command="{Binding AddCommonCommand}"
                   ToolTip="Dò các ứng dụng quen thuộc đã cài trên máy và thêm vào danh sách" />

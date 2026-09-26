@@ -6,11 +6,11 @@ Dành cho người bảo trì. Hướng dẫn cho người dùng ở [huong-dan-
 
 ```
 src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test được
-  Monitor/    quét socket đang mở (P/Invoke iphlpapi)
+  Monitor/    quét socket đang mở (P/Invoke iphlpapi), liệt kê ứng dụng đang chạy
   History/    đọc event WFP 5157/5156, map path kernel sang ổ đĩa
   Audit/      bật/đọc audit policy qua auditpol
   Firewall/   COM INetFwPolicy2 + state machine enforcement
-  Policy/     allow-list store, reconcile rule
+  Policy/     allow-list store, reconcile rule, danh mục ứng dụng phổ biến + dò đường dẫn
   Baseline/   danh sách service OS (JSON)
   Safety/     backup cấu hình, dead-man switch
   Startup/    task lúc khởi động, reconciler
@@ -19,10 +19,10 @@ src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test đ�
 src/EVBlocker.App/      WPF — chỉ gọi Core qua interface
 tools/EVBlocker.Verify/ kiểm chứng các thao tác cần quyền admin
 tools/capture-ui.ps1    chụp ảnh cửa sổ để kiểm giao diện sau khi sửa XAML
-tests/                  227 test, không cần admin
+tests/                  264 test, không cần admin
 ```
 
-Mọi thành phần chạm Windows API đều nằm sau interface. Đó là lý do 227 test chạy được mà không
+Mọi thành phần chạm Windows API đều nằm sau interface. Đó là lý do 264 test chạy được mà không
 cần quyền admin, và cũng là ranh giới quyết định cái gì test được, cái gì không.
 
 ## Bốn cách nói chuyện với Windows, và vì sao
@@ -118,7 +118,7 @@ nào, lúc đó mọi `DynamicResource` giải về rỗng và cửa sổ vẽ t
 ## Build và kiểm chứng
 
 ```powershell
-dotnet test                                                              # 227 test, không cần admin
+dotnet test                                                              # 264 test, không cần admin
 dotnet publish src/EVBlocker.App -p:PublishProfile=SelfContained         # 1 file, ~63 MB
 
 # Cần admin: kiểm các thao tác ghi mà unit test không chạm tới được

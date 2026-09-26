@@ -45,10 +45,30 @@ Dùng máy vài ngày như bình thường, rồi xem tab **Đã thử kết n�
 
 ### 2. Dựng allow-list
 
-Tab **Allow-list** → **Thêm ứng dụng…** → chọn file `.exe`.
+Tab **Allow-list** có ba cách:
+
+- **Quét ứng dụng đang chạy** — liệt kê mọi ứng dụng đang chạy trên máy, tích cái nào được ra
+  internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần trong thư mục Windows
+  bị ẩn mặc định, vì cho phép chúng theo đường dẫn hầu như luôn sai — baseline đã lo phần đó theo
+  tên service.
+- **Thêm ứng dụng phổ biến** — dò các ứng dụng quen thuộc (trình duyệt, IDE, công cụ đồng bộ,
+  Zalo, Claude/Codex CLI) và chỉ thêm những cái **thật sự đã cài**. Máy nào cũng chỉ có một phần
+  trong danh sách đó, nên nút này không thêm thứ máy không có.
+- **Thêm ứng dụng…** — tự chọn file `.exe`.
+
+**Không cần tạo rule chặn cho những app không tích.** Khi bật chặn outbound, mọi thứ không có
+rule cho phép đều bị chặn. Một danh sách chặn tường minh còn yếu hơn: phần mềm cài sau lần quét
+sẽ không nằm trong đó, và sẽ được cho qua.
+
+Lưu ý khi quét không có quyền Admin: Windows chỉ cho đọc đường dẫn của khoảng một nửa số tiến
+trình. Dialog hiện rõ tỉ lệ đọc được; muốn danh sách đầy đủ thì chạy lại với quyền Admin.
 
 Nhiều ứng dụng có nhiều file thực thi (launcher, updater, tiến trình con). Tab **Đang kết nối**
 cho biết file nào thật sự mở kết nối.
+
+Muốn bổ sung ứng dụng vào danh mục dò thì tạo file ghi đè (xem bảng đường dẫn bên dưới) theo cấu
+trúc của danh mục gốc; đường dẫn dùng được biến môi trường và một `*` cho mỗi đoạn — cần thiết
+cho phần mềm cài vào thư mục đặt tên theo phiên bản.
 
 Bấm **Áp dụng vào Firewall** để ghi rule. Chưa bật chặn thì rule này chưa có tác dụng gì.
 
@@ -109,6 +129,7 @@ mò điều đó lúc khởi động không phải việc của nó.
 |---|---|
 | `%ProgramData%\EVBlocker\allowlist.json` | Allow-list (toàn máy) |
 | `%ProgramData%\EVBlocker\baseline-allow.json` | Ghi đè baseline, nếu bạn tạo |
+| `%ProgramData%\EVBlocker\known-apps.json` | Ghi đè danh mục ứng dụng phổ biến, nếu bạn tạo |
 | `%ProgramData%\EVBlocker\backups\*.wfw` | Bản sao lưu firewall, giữ 10 bản mới nhất |
 | `%ProgramData%\EVBlocker\reconcile.log` | Nhật ký của lần chạy lúc khởi động |
 | `%LOCALAPPDATA%\EVBlocker\settings.json` | Giao diện sáng/tối (riêng từng người dùng) |
