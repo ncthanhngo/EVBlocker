@@ -1,0 +1,27 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in the solution.
+    Kept here so a TFM or analyzer change is a one-line edit, not a per-project edit.
+  -->
+  <PropertyGroup>
+    <!-- Windows-only by design: the whole product wraps Windows Firewall and WFP audit logs. -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- A warning here usually means a P/Invoke or trimming mistake, so fail the build on it. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Required for [LibraryImport] source-generated P/Invoke. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Surface trim problems at build time instead of at runtime on the published build. -->
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+  </PropertyGroup>
+
+</Project>

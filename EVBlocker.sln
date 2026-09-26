@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{256BE7C5-275A-4771-88C1-F59EB4529E56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVBlocker.Core", "src\EVBlocker.Core\EVBlocker.Core.csproj", "{0128D1C3-0D48-48C7-A0A4-7492E862AB98}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CE53119D-91F2-4A59-9244-7505CA2ED8ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVBlocker.Core.Tests", "tests\EVBlocker.Core.Tests\EVBlocker.Core.Tests.csproj", "{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0128D1C3-0D48-48C7-A0A4-7492E862AB98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0128D1C3-0D48-48C7-A0A4-7492E862AB98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0128D1C3-0D48-48C7-A0A4-7492E862AB98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0128D1C3-0D48-48C7-A0A4-7492E862AB98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0128D1C3-0D48-48C7-A0A4-7492E862AB98} = {256BE7C5-275A-4771-88C1-F59EB4529E56}
+		{C5BB4138-3CF5-409A-B0EF-A06FC022C1AB} = {CE53119D-91F2-4A59-9244-7505CA2ED8ED}
+	EndGlobalSection
+EndGlobal

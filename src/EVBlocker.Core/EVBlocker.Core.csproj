@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- TargetFramework, Nullable, analyzers: see Directory.Build.props at the repo root. -->
+
+  <ItemGroup>
+    <!-- EventLogQuery, used to read WFP audit events 5157/5156 from the Security log. -->
+    <PackageReference Include="System.Diagnostics.EventLog" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The auditpol CSV parser is an implementation detail but carries the trickiest logic in
+         this assembly, so it is tested directly rather than promoted to the public surface. -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>EVBlocker.Core.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
