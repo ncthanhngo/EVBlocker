@@ -3,6 +3,13 @@
   <!-- TargetFramework, Nullable, analyzers: see Directory.Build.props at the repo root. -->
 
   <ItemGroup>
+    <!-- Source generator for the Windows Firewall COM interop; see NativeMethods.txt.
+         PrivateAssets=all because it runs at build time and ships nothing at runtime. -->
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.335">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
     <!-- EventLogQuery, used to read WFP audit events 5157/5156 from the Security log. -->
     <PackageReference Include="System.Diagnostics.EventLog" Version="8.0.1" />
   </ItemGroup>
