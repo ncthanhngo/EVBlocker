@@ -240,6 +240,46 @@
       "candidates": [
         "%LOCALAPPDATA%\\JetBrains\\Toolbox\\bin\\jetbrains-toolbox.exe"
       ]
+    },
+    {
+      "name": "Slack",
+      "candidates": [
+        "%LOCALAPPDATA%\\slack\\slack.exe",
+        "%LOCALAPPDATA%\\slack\\app-*\\slack.exe",
+        "%ProgramFiles%\\Slack\\slack.exe"
+      ]
+    },
+    {
+      "name": "Microsoft Teams (classic)",
+      "candidates": [
+        "%LOCALAPPDATA%\\Microsoft\\Teams\\current\\Teams.exe"
+      ]
+    },
+    {
+      "name": "Discord",
+      "candidates": [
+        "%LOCALAPPDATA%\\Discord\\app-*\\Discord.exe"
+      ]
+    },
+    {
+      "name": "Postman",
+      "candidates": [
+        "%LOCALAPPDATA%\\Postman\\Postman.exe",
+        "%LOCALAPPDATA%\\Postman\\app-*\\Postman.exe"
+      ]
+    },
+    {
+      "name": "Notion",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Notion\\Notion.exe"
+      ]
+    },
+    {
+      "name": "Figma",
+      "candidates": [
+        "%LOCALAPPDATA%\\Figma\\Figma.exe",
+        "%LOCALAPPDATA%\\Figma\\app-*\\Figma.exe"
+      ]
     }
   ]
 }

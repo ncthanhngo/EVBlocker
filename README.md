@@ -59,7 +59,7 @@ qua nó.
 Cần .NET 8 SDK.
 
 ```powershell
-dotnet test                                                       # 318 test, không cần admin
+dotnet test                                                       # 320 test, không cần admin
 dotnet publish src/EVBlocker.App -p:PublishProfile=SelfContained  # 1 file, ~63 MB
 ```
 

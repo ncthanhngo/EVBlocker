@@ -55,7 +55,11 @@ hướng vào máy trạm lập trình:
 | IDE, editor | VS Code · Visual Studio · GoLand · IntelliJ IDEA · PyCharm · WebStorm · CLion · Rider · DataGrip · JetBrains Toolbox · Cursor · Windsurf |
 | AI CLI | Claude CLI · Claude Desktop · Codex CLI |
 | Container | Docker Desktop |
-| Trình duyệt, đồng bộ, liên lạc | Chrome · Edge · OneDrive · Google Drive · Zalo |
+| API, thiết kế, ghi chú | Postman · Figma · Notion |
+| Trình duyệt, đồng bộ, liên lạc | Chrome · Edge · OneDrive · Google Drive · Zalo · Slack · Teams (bản cũ) · Discord |
+
+**Teams bản mới không cho phép theo đường dẫn được** — nó là ứng dụng Microsoft Store, giống
+trường hợp `winget` nói ở phần giới hạn. Danh mục chỉ dò được Teams bản cũ.
 
 **Git cần ba file, không phải một.** `cmd\git.exe` chỉ là shim 47 KB; client thật nằm ở
 `mingw64\bin\git.exe`, còn việc tải/đẩy qua HTTPS do một file riêng `git-remote-https.exe` làm.

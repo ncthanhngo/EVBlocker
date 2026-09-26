@@ -20,10 +20,10 @@ src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test đ�
 src/EVBlocker.App/      WPF — chỉ gọi Core qua interface
 tools/EVBlocker.Verify/ kiểm chứng các thao tác cần quyền admin
 tools/capture-ui.ps1    chụp ảnh cửa sổ để kiểm giao diện sau khi sửa XAML
-tests/                  318 test, không cần admin
+tests/                  320 test, không cần admin
 ```
 
-Mọi thành phần chạm Windows API đều nằm sau interface. Đó là lý do 318 test chạy được mà không
+Mọi thành phần chạm Windows API đều nằm sau interface. Đó là lý do 320 test chạy được mà không
 cần quyền admin, và cũng là ranh giới quyết định cái gì test được, cái gì không.
 
 ## Bốn cách nói chuyện với Windows, và vì sao
@@ -163,7 +163,7 @@ hoá kèm recycling nên converter chạy lại cho mọi dòng cuộn vào tầ
 ## Build và kiểm chứng
 
 ```powershell
-dotnet test                                                              # 318 test, không cần admin
+dotnet test                                                              # 320 test, không cần admin
 dotnet publish src/EVBlocker.App -p:PublishProfile=SelfContained         # 1 file, ~63 MB
 
 # Cần admin: kiểm các thao tác ghi mà unit test không chạm tới được

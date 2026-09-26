@@ -131,6 +131,8 @@ public sealed class KnownAppsTests : IDisposable
     [InlineData("Python")]
     [InlineData(".NET SDK")]
     [InlineData("GitHub CLI")]
+    [InlineData("Slack")]
+    [InlineData("Postman")]
     public void ShippedCatalogue_ContainsTheRequestedApplications(string name)
     {
         Assert.Contains(new KnownApps(NoOverride).Load().Apps, a => a.Name == name);
