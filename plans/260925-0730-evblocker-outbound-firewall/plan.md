@@ -92,6 +92,16 @@ Baseline allow-list là **file JSON**, không phải code — nâng cấp danh s
 
 06 làm được song song sau 02.
 
+## Việc làm sau plan
+
+Plan này dừng ở Phase 06. Những thứ sau được thêm theo yêu cầu phát sinh và **không** nằm trong
+sáu phase trên — đọc `docs/` để có bức tranh hiện tại, không đọc plan:
+
+- Hai giao diện (sáng mặc định) + mục Cài đặt, kiểm tra bản mới từ GitHub Releases khi bấm nút
+- Danh mục ứng dụng phổ biến + dò đường dẫn thật trên máy
+- Nút **Quét ứng dụng đang chạy** để dựng allow-list từ những gì đang chạy
+- Workflow phát hành, README, `tools/capture-ui.ps1`
+
 ## Tài liệu
 
 Plan này ghi lại **cách dự án được dựng** — các phase, chỗ lệch so với dự kiến, và kết quả kiểm
