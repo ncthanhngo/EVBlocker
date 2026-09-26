@@ -18,6 +18,7 @@ src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test đ�
   Internal/   chạy process, xoá file an toàn
 src/EVBlocker.App/      WPF — chỉ gọi Core qua interface
 tools/EVBlocker.Verify/ kiểm chứng các thao tác cần quyền admin
+tools/capture-ui.ps1    chụp ảnh cửa sổ để kiểm giao diện sau khi sửa XAML
 tests/                  227 test, không cần admin
 ```
 
