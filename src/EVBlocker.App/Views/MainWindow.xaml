@@ -23,6 +23,18 @@
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
+    <!-- Shared by the rail's two lists so a row looks the same in both halves. -->
+    <DataTemplate x:Key="RailItemTemplate">
+      <StackPanel Orientation="Horizontal">
+        <Ellipse Width="8" Height="8" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Title}" Margin="11,0,0,0" VerticalAlignment="Center"
+                   Foreground="{Binding Foreground,
+                     RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                   FontWeight="{Binding FontWeight,
+                     RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
+      </StackPanel>
+    </DataTemplate>
+
     <!-- ===================== section: live connections ===================== -->
     <DataTemplate DataType="{x:Type vm:ActiveConnectionsViewModel}">
       <DockPanel>
@@ -177,6 +189,29 @@
       </DockPanel>
     </DataTemplate>
 
+    <!-- ===================== section: monitoring =====================
+         One rail entry, two views. They answer the same question in two tenses, and the rail's
+         weight belongs to the allow-list instead. -->
+    <DataTemplate DataType="{x:Type vm:MonitorViewModel}">
+      <DockPanel>
+        <Border DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,0,0,14" Padding="3"
+                CornerRadius="{StaticResource ControlRadius}"
+                Background="{DynamicResource SurfaceSunkenBrush}">
+          <StackPanel Orientation="Horizontal">
+            <ToggleButton Style="{StaticResource SegmentButton}" Content="Đang kết nối"
+                          IsChecked="{Binding ShowLive}" />
+            <ToggleButton Style="{StaticResource SegmentButton}" Content="Đã bị chặn"
+                          IsChecked="{Binding ShowHistory}" />
+          </StackPanel>
+        </Border>
+
+        <ContentControl Content="{Binding Active}"
+                        Visibility="{Binding ShowLive, Converter={StaticResource BoolToVis}}" />
+        <ContentControl Content="{Binding History}"
+                        Visibility="{Binding ShowHistory, Converter={StaticResource BoolToVis}}" />
+      </DockPanel>
+    </DataTemplate>
+
     <!-- ===================== section: allow-list ===================== -->
     <DataTemplate DataType="{x:Type vm:AllowListViewModel}">
       <DockPanel>
@@ -191,6 +226,7 @@
             <Button.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Từ phần mềm đang chạy…" Command="{Binding ScanCommand}" />
+                <MenuItem Header="Từ phần mềm đã cài…" Command="{Binding InstalledCommand}" />
                 <MenuItem Header="Phần mềm quen thuộc đã cài" Command="{Binding AddCommonCommand}" />
                 <MenuItem Header="Chọn file trên máy…" Command="{Binding AddCommand}" />
               </ContextMenu>
@@ -199,9 +235,6 @@
           <Button Content="Bỏ cho phép" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
           <Button Content="Lưu vào tường lửa" Margin="10,0,0,0" Command="{Binding ApplyCommand}"
                   ToolTip="Ghi danh sách này vào tường lửa của Windows. Cần quyền quản trị." />
-          <TextBlock Text="Cả danh sách phần mềm đã cài nằm ở mục &quot;Phần mềm đã cài&quot;."
-                     VerticalAlignment="Center" Margin="16,0,0,0"
-                     Style="{StaticResource MutedText}" />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"
@@ -240,115 +273,6 @@
                     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                     <Setter Property="ToolTip" Value="{Binding ExecutablePath}" />
                     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                  </Style>
-                </DataGridTextColumn.ElementStyle>
-              </DataGridTextColumn>
-            </DataGrid.Columns>
-          </DataGrid>
-        </Border>
-      </DockPanel>
-    </DataTemplate>
-
-    <!-- ===================== section: installed programs =====================
-         The same list Control Panel shows, read from the same registry keys, so software
-         installed since the app started is simply there the next time this is opened. -->
-    <DataTemplate DataType="{x:Type vm:InstalledProgramsViewModel}">
-      <DockPanel>
-
-        <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="260" />
-          </Grid.ColumnDefinitions>
-
-          <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-            <CheckBox Content="Ẩn driver và thành phần nền" IsChecked="{Binding HideSupportComponents}"
-                      ToolTip="Ẩn driver, bộ cài đi kèm và thành phần nền — chúng không tự ra internet" />
-            <CheckBox Content="Chỉ hiện mục chưa quyết định" Margin="20,0,0,0"
-                      IsChecked="{Binding UndecidedOnly}"
-                      ToolTip="Phần mềm mới cài sẽ nằm ở đây" />
-          </StackPanel>
-
-          <Grid Grid.Column="2">
-            <TextBox x:Name="ProgramSearch"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}" />
-            <TextBlock Text="Tìm theo tên hoặc đường dẫn…" IsHitTestVisible="False"
-                       Margin="12,0,0,0" VerticalAlignment="Center"
-                       Foreground="{DynamicResource TextMutedBrush}" FontSize="12.5">
-              <TextBlock.Style>
-                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                  <Setter Property="Visibility" Value="Collapsed" />
-                  <Style.Triggers>
-                    <DataTrigger Binding="{Binding Text, ElementName=ProgramSearch}" Value="">
-                      <Setter Property="Visibility" Value="Visible" />
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </TextBlock.Style>
-            </TextBlock>
-          </Grid>
-        </Grid>
-
-        <Grid DockPanel.Dock="Bottom" Margin="4,10,0,0">
-          <TextBlock Style="{StaticResource MutedText}" Text="{Binding Status}"
-                     TextWrapping="Wrap" Margin="0,0,320,0" VerticalAlignment="Center" />
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Đọc lại" Command="{Binding RefreshCommand}" />
-            <Button Content="Cho phép ra internet" Margin="10,0,0,0"
-                    Style="{StaticResource PrimaryButton}" Command="{Binding AllowCommand}"
-                    ToolTip="Cho những phần mềm đã tích được ra internet" />
-          </StackPanel>
-        </Grid>
-
-        <Border Style="{StaticResource Card}" Padding="4,0,4,4">
-          <DataGrid ItemsSource="{Binding Rows}">
-            <DataGrid.Columns>
-              <DataGridTemplateColumn Width="44">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate>
-                    <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
-                              IsEnabled="{Binding CanSelect}" HorizontalAlignment="Center" />
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-
-              <DataGridTemplateColumn Header="PHẦN MỀM" Width="240">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate>
-                    <StackPanel Orientation="Horizontal" ToolTip="{Binding PathTooltip}">
-                      <Image Style="{StaticResource AppIconImage}"
-                             Source="{Binding FirstExecutable, Converter={StaticResource AppIcon}}" />
-                      <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
-                                 TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-
-              <DataGridTextColumn Header="NHÀ PHÁT HÀNH" Binding="{Binding Publisher}" Width="150">
-                <DataGridTextColumn.ElementStyle>
-                  <Style TargetType="TextBlock">
-                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                  </Style>
-                </DataGridTextColumn.ElementStyle>
-              </DataGridTextColumn>
-
-              <DataGridTextColumn Header="PHIÊN BẢN" Binding="{Binding Version}" Width="110" />
-              <DataGridTextColumn Header="CÀI LÚC" Binding="{Binding InstalledOn}" Width="100" />
-
-              <DataGridTextColumn Header="TÌNH TRẠNG" Binding="{Binding Status}" Width="*">
-                <DataGridTextColumn.ElementStyle>
-                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding Status}" Value="Đã cho phép">
-                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                      </DataTrigger>
-                      <DataTrigger Binding="{Binding IsResolved}" Value="False">
-                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                      </DataTrigger>
-                    </Style.Triggers>
                   </Style>
                 </DataGridTextColumn.ElementStyle>
               </DataGridTextColumn>
@@ -604,32 +528,28 @@
 
       <DockPanel Margin="0,14,0,12">
 
-        <TextBlock DockPanel.Dock="Top" Text="GIÁM SÁT" Margin="18,0,0,8"
-                   Foreground="{DynamicResource SidebarMutedBrush}"
-                   FontSize="11" FontWeight="SemiBold" />
+        <!-- No group heading any more. With two destinations there is nothing to group, and the
+             one that was here said GIÁM SÁT above rows that were not monitoring. -->
 
         <TextBlock DockPanel.Dock="Bottom" Margin="18,0,14,0" TextWrapping="Wrap"
                    Text="{Binding Source={x:Static vm:MainViewModel.AppVersion}, Mode=OneTime}"
                    FontSize="11"
                    Foreground="{DynamicResource SidebarMutedBrush}" Opacity="0.75" />
 
+        <!-- Settings sits at the foot of the rail in its own list. Two lists rather than one
+             because a ListBox cannot pin its last row to the bottom; the view model ignores the
+             null that the list not holding the selection writes back. -->
+        <ListBox DockPanel.Dock="Bottom" Style="{StaticResource RailList}"
+                 ItemsSource="{Binding BottomSections}"
+                 SelectedItem="{Binding SelectedSection}"
+                 Margin="0,0,0,14"
+                 ItemTemplate="{DynamicResource RailItemTemplate}" />
+
         <ListBox Style="{StaticResource RailList}"
                  ItemsSource="{Binding Sections}"
                  SelectedItem="{Binding SelectedSection}"
-                 VerticalAlignment="Top">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <StackPanel Orientation="Horizontal">
-                <Ellipse Width="8" Height="8" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Title}" Margin="11,0,0,0" VerticalAlignment="Center"
-                           Foreground="{Binding Foreground,
-                             RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
-                           FontWeight="{Binding FontWeight,
-                             RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+                 VerticalAlignment="Top"
+                 ItemTemplate="{DynamicResource RailItemTemplate}" />
       </DockPanel>
     </Border>
   </Grid>

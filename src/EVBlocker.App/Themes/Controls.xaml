@@ -33,6 +33,42 @@
     <Setter Property="Stretch" Value="Uniform" />
   </Style>
 
+  <!-- ============================ segment ============================= -->
+
+  <!--
+    Two of these side by side switch between the views behind one rail entry. A ToggleButton
+    rather than a TabControl: the app styles only the controls it shows, and a tab strip would
+    mean maintaining a header template, a content presenter and their selection states to end
+    up looking like these two buttons.
+  -->
+  <Style x:Key="SegmentButton" TargetType="ToggleButton">
+    <Setter Property="Height" Value="30" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border x:Name="Shell" CornerRadius="{StaticResource ControlRadius}"
+                  Background="Transparent" Padding="{TemplateBinding Padding}">
+            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Shell" Property="Background" Value="{DynamicResource HoverBrush}" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Shell" Property="Background" Value="{DynamicResource AccentBrush}" />
+              <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+              <Setter Property="FontWeight" Value="SemiBold" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- ============================== type ============================== -->
 
   <!--

@@ -66,11 +66,13 @@ public sealed class AllowListViewModel : ObservableObject
     private readonly Func<IFirewallPolicy> _policyFactory;
     private readonly Func<string[]?> _pickFiles;
     private readonly Func<IReadOnlyList<ScannedSelection>?> _pickRunningApps;
+    private readonly Func<IReadOnlyList<ScannedSelection>?> _pickInstalledApps;
     private readonly Func<string, string, bool> _confirm;
 
     private readonly RelayCommand _addCommand;
     private readonly RelayCommand _addCommonCommand;
     private readonly RelayCommand _scanCommand;
+    private readonly RelayCommand _installedCommand;
     private readonly RelayCommand _removeCommand;
     private readonly RelayCommand _applyCommand;
 
@@ -88,23 +90,27 @@ public sealed class AllowListViewModel : ObservableObject
         Func<IFirewallPolicy> policyFactory,
         Func<string[]?> pickFiles,
         Func<IReadOnlyList<ScannedSelection>?> pickRunningApps,
+        Func<IReadOnlyList<ScannedSelection>?> pickInstalledApps,
         Func<string, string, bool> confirm)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(policyFactory);
         ArgumentNullException.ThrowIfNull(pickFiles);
         ArgumentNullException.ThrowIfNull(pickRunningApps);
+        ArgumentNullException.ThrowIfNull(pickInstalledApps);
         ArgumentNullException.ThrowIfNull(confirm);
 
         _store = store;
         _policyFactory = policyFactory;
         _pickFiles = pickFiles;
         _pickRunningApps = pickRunningApps;
+        _pickInstalledApps = pickInstalledApps;
         _confirm = confirm;
 
         _addCommand = new RelayCommand(Add, () => !_loadFailed);
         _addCommonCommand = new RelayCommand(AddCommonApps, () => !_loadFailed);
         _scanCommand = new RelayCommand(ScanRunningApps, () => !_loadFailed);
+        _installedCommand = new RelayCommand(PickInstalled, () => !_loadFailed);
         _removeCommand = new RelayCommand(RemoveSelected, () => _selected is not null && !_loadFailed);
         _applyCommand = new RelayCommand(ApplyToFirewall, () => !_loadFailed);
 
@@ -136,6 +142,8 @@ public sealed class AllowListViewModel : ObservableObject
     public System.Windows.Input.ICommand AddCommonCommand => _addCommonCommand;
 
     public System.Windows.Input.ICommand ScanCommand => _scanCommand;
+
+    public System.Windows.Input.ICommand InstalledCommand => _installedCommand;
 
     public System.Windows.Input.ICommand RemoveCommand => _removeCommand;
 
@@ -268,6 +276,7 @@ public sealed class AllowListViewModel : ObservableObject
         _addCommand.RaiseCanExecuteChanged();
         _addCommonCommand.RaiseCanExecuteChanged();
         _scanCommand.RaiseCanExecuteChanged();
+        _installedCommand.RaiseCanExecuteChanged();
         _removeCommand.RaiseCanExecuteChanged();
         _applyCommand.RaiseCanExecuteChanged();
     }
@@ -332,6 +341,22 @@ public sealed class AllowListViewModel : ObservableObject
     /// everything without an allow rule, and an explicit block list would be strictly weaker:
     /// anything installed after the scan would not be on it, and would therefore be allowed.
     /// </remarks>
+    /// <summary>Opens the installed-programs picker and adds whatever was ticked.</summary>
+    private void PickInstalled()
+    {
+        IReadOnlyList<ScannedSelection>? picked = _pickInstalledApps();
+        if (picked is null || picked.Count == 0)
+        {
+            return;
+        }
+
+        int added = AddApps(picked);
+
+        Status = added == 0
+            ? "Những phần mềm đã chọn đều được cho phép rồi."
+            : $"Đã cho phép thêm {added} file. Bấm \"Lưu vào tường lửa\" để áp dụng.";
+    }
+
     private void ScanRunningApps()
     {
         IReadOnlyList<ScannedSelection>? picked = _pickRunningApps();

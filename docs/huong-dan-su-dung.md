@@ -30,7 +30,7 @@ Bắt đầu chặn khi chưa biết máy cần gì là cách nhanh nhất để
 
 ### 1. Quan sát trước
 
-Mở mục **Đã thử kết nối** và bấm **Bật ghi nhật ký**. Cần quyền quản trị.
+Mở **Theo dõi → Đã bị chặn** và bấm **Bật ghi nhật ký**. Cần quyền quản trị.
 
 Windows không ghi lại việc phần mềm cố ra internet cho tới khi được bật, nên trước đó mục này
 trống dù máy chạy bao lâu. Ứng dụng chỉ bật phần ghi **lần bị chặn**; ghi thêm cả lần thành công
@@ -46,7 +46,7 @@ auditpol /set /subcategory:"{0CCE9226-69AE-11D9-BED3-505054503030}" /failure:ena
 
 Dùng GUID chứ không dùng tên, vì tên subcategory bị dịch theo ngôn ngữ Windows.
 
-Dùng máy vài ngày như bình thường, rồi quay lại mục đó và bấm **Tải lại**.
+Dùng máy vài ngày như bình thường, rồi quay lại đó và bấm **Tải lại**.
 
 ### 2. Dựng danh sách cho phép
 
@@ -76,12 +76,24 @@ là máy chưa cài nó — tạo rule trỏ vào file không tồn tại thì W
 như đúng trong khi không cho phép gì cả.
 
 Gỡ một ứng dụng khỏi danh sách là **quyết định vĩnh viễn**: nó được ghi lại trong `allowlist.json`
-nên lần mở sau không bị thêm lại. Muốn lấy lại thì bấm **Thêm ứng dụng phổ biến**.
+nên lần mở sau không bị thêm lại. Muốn lấy lại thì dùng **Thêm phần mềm… → Phần mềm quen thuộc đã cài**.
 
-### Mục "Phần mềm đã cài"
+Mục **Phần mềm được phép** → nút **Thêm phần mềm…**, chọn một trong bốn:
 
-Liệt kê đúng những gì Control Panel → Programs hiển thị, đọc từ cùng ba nhánh registry, nên phần
-mềm vừa cài xong đã có mặt ngay lần mở kế tiếp — không có gì phải làm mới hay đồng bộ.
+- **Từ phần mềm đang chạy** — liệt kê mọi phần mềm đang chạy trên máy, tích cái nào được ra
+  internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần của Windows bị ẩn mặc
+  định, vì cho phép chúng theo đường dẫn hầu như luôn sai — ứng dụng đã tự lo phần đó theo tên
+  dịch vụ.
+- **Từ phần mềm đã cài…** — danh sách giống Control Panel, xem mục dưới.
+- **Phần mềm quen thuộc đã cài** — dò lại danh mục trên. Dùng khi vừa cài thêm một phần mềm
+  trong đó, hoặc muốn lấy lại cái đã gỡ.
+- **Chọn file trên máy…** — tự chọn file `.exe`.
+
+### Chọn từ phần mềm đã cài
+
+**Thêm phần mềm… → Từ phần mềm đã cài…** mở đúng danh sách Control Panel → Programs hiển thị,
+đọc từ cùng ba nhánh registry, nên phần mềm vừa cài xong đã có mặt ngay lần mở kế tiếp — không
+có gì phải làm mới hay đồng bộ.
 
 Tích phần mềm nào thì file chạy của nó vào danh sách cho phép. Bộ lọc **Chỉ hiện mục chưa quyết định**
 là chỗ phần mềm mới cài rơi vào. **Ẩn driver và thành phần nền** bật sẵn vì driver, bộ cài đi kèm và
@@ -91,7 +103,7 @@ thống cần thiết.
 
 **Một mục gỡ cài đặt mô tả *phần mềm*, còn firewall cần *file .exe*, và registry không phải lúc
 nào cũng bắc được cầu đó.** Đo trên một máy thật: 35 phần mềm, 16 xác định được file, 19 không.
-Dòng không xác định được vẫn hiện nhưng không tích được — thêm bằng **Thêm ứng dụng…**.
+Dòng không xác định được vẫn hiện nhưng không có ô tích — thêm bằng **Chọn file trên máy…**.
 
 Hai chỗ dễ sai đã được xử lý, nhưng nên biết:
 
@@ -104,16 +116,6 @@ Hai chỗ dễ sai đã được xử lý, nhưng nên biết:
 Git vẫn là ngoại lệ: mục Git ở đây chỉ ra các launcher trong thư mục gốc, không ra
 `git-remote-https.exe`. Dùng danh mục mặc định cho Git, đừng dựa vào màn hình này.
 
-Thêm thủ công: mục **Danh sách cho phép** → nút **Thêm phần mềm…**, chọn một trong ba:
-
-- **Từ phần mềm đang chạy** — liệt kê mọi phần mềm đang chạy trên máy, tích cái nào được ra
-  internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần của Windows bị ẩn mặc
-  định, vì cho phép chúng theo đường dẫn hầu như luôn sai — ứng dụng đã tự lo phần đó theo tên
-  dịch vụ.
-- **Phần mềm quen thuộc đã cài** — dò lại danh mục trên. Dùng khi vừa cài thêm một phần mềm trong
-  đó, hoặc muốn lấy lại cái đã gỡ.
-- **Chọn file trên máy…** — tự chọn file `.exe`.
-
 **Không cần tạo danh sách chặn riêng.** Khi bạn bắt đầu chặn, mọi thứ không nằm trong danh sách
 cho phép đều bị chặn. Một danh sách chặn tường minh còn yếu hơn: phần mềm cài sau lần quét sẽ
 không nằm trong đó, và sẽ được cho qua.
@@ -121,8 +123,8 @@ không nằm trong đó, và sẽ được cho qua.
 Lưu ý khi quét không có quyền quản trị: Windows chỉ cho đọc đường dẫn của khoảng một nửa số tiến
 trình. Dialog hiện rõ tỉ lệ đọc được; muốn danh sách đầy đủ thì chạy lại với quyền quản trị.
 
-Nhiều ứng dụng có nhiều file thực thi (launcher, updater, tiến trình con). Mục **Đang kết nối**
-cho biết file nào thật sự mở kết nối.
+Nhiều ứng dụng có nhiều file chạy (launcher, updater, tiến trình con). **Theo dõi → Đang kết
+nối** cho biết file nào thật sự mở kết nối.
 
 Muốn bổ sung ứng dụng vào danh mục dò thì tạo file ghi đè (xem bảng đường dẫn bên dưới) theo cấu
 trúc của danh mục gốc; đường dẫn dùng được biến môi trường và một `*` cho mỗi đoạn — cần thiết
@@ -166,7 +168,7 @@ số đếm ngược.
 
 ## Tự kiểm tra lại khi mở máy
 
-Bật ở mục **Cài đặt**. Nó đăng ký một task chạy lúc khởi động để kiểm tra danh sách có bị thay
+Bật ở mục **Cài đặt** dưới đáy thanh bên. Nó đăng ký một task chạy lúc khởi động để kiểm tra danh sách có bị thay
 đổi không, và đặt lại nếu có.
 
 **Việc chặn không cần cái này.** `DefaultOutboundAction` và rule nằm trong cấu hình Windows

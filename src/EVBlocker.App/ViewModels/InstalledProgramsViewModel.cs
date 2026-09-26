@@ -78,9 +78,7 @@ public sealed class InstalledProgramsViewModel : ObservableObject
 {
     private readonly IInstalledProgramScanner _scanner;
     private readonly Func<IReadOnlySet<string>> _allowedPaths;
-    private readonly Func<IReadOnlyList<ScannedSelection>, int> _allow;
     private readonly RelayCommand _refreshCommand;
-    private readonly RelayCommand _allowCommand;
 
     private IReadOnlyList<InstalledProgramRowViewModel> _all = Array.Empty<InstalledProgramRowViewModel>();
     private bool _hideSupportComponents = true;
@@ -91,28 +89,34 @@ public sealed class InstalledProgramsViewModel : ObservableObject
 
     public InstalledProgramsViewModel(
         IInstalledProgramScanner scanner,
-        Func<IReadOnlySet<string>> allowedPaths,
-        Func<IReadOnlyList<ScannedSelection>, int> allow)
+        Func<IReadOnlySet<string>> allowedPaths)
     {
         ArgumentNullException.ThrowIfNull(scanner);
         ArgumentNullException.ThrowIfNull(allowedPaths);
-        ArgumentNullException.ThrowIfNull(allow);
 
         _scanner = scanner;
         _allowedPaths = allowedPaths;
-        _allow = allow;
 
         _refreshCommand = new RelayCommand(() => _ = LoadAsync(), () => !_isBusy);
-        _allowCommand = new RelayCommand(AllowSelected, () => !_isBusy);
 
         _ = LoadAsync();
     }
 
+    /// <summary>
+    /// What the user ticked, as the allow-list takes it.
+    /// </summary>
+    /// <remarks>
+    /// Returned rather than applied here, the same way the running-app scan works: one place
+    /// adds to the allow-list, and that place is where the interpreter warning lives.
+    /// </remarks>
+    public IReadOnlyList<ScannedSelection> Selected => Rows
+        .Where(row => row.IsSelected && row.CanSelect)
+        .SelectMany(row => row.Source.Executables.Select(path => new ScannedSelection(row.Name, path)))
+        .ToList();
+
     public ObservableCollection<InstalledProgramRowViewModel> Rows { get; } = new();
 
     public System.Windows.Input.ICommand RefreshCommand => _refreshCommand;
-
-    public System.Windows.Input.ICommand AllowCommand => _allowCommand;
 
     /// <summary>Hides drivers, runtimes and redistributables, which are most of the list.</summary>
     public bool HideSupportComponents
@@ -205,33 +209,5 @@ public sealed class InstalledProgramsViewModel : ObservableObject
             $"{_all.Count} phần mềm · {undecided} chưa quyết định{(hidden > 0 ? $" · {hidden} đang ẩn" : string.Empty)}");
     }
 
-    private void AllowSelected()
-    {
-        List<ScannedSelection> picked = Rows
-            .Where(row => row.IsSelected && row.CanSelect)
-            .SelectMany(row => row.Source.Executables.Select(path => new ScannedSelection(row.Name, path)))
-            .ToList();
-
-        if (picked.Count == 0)
-        {
-            Status = "Chưa tích phần mềm nào.";
-            return;
-        }
-
-        int added = _allow(picked);
-
-        Status = added == 0
-            ? "Những file đó đã được cho phép rồi."
-            : $"Đã cho phép {added} file. Sang mục Danh sách cho phép rồi bấm \"Lưu vào tường lửa\" để áp dụng.";
-
-        // Reloaded rather than patched: the allow-list is the source of truth for what a row
-        // says, and it has just changed underneath every row, not only the ticked ones.
-        _ = LoadAsync();
-    }
-
-    private void RefreshCommands()
-    {
-        _refreshCommand.RaiseCanExecuteChanged();
-        _allowCommand.RaiseCanExecuteChanged();
-    }
+    private void RefreshCommands() => _refreshCommand.RaiseCanExecuteChanged();
 }

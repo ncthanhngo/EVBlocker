@@ -35,14 +35,10 @@ public sealed class MainViewModel : ObservableObject
             () => new WindowsFirewallPolicy(),
             PickExecutables,
             PickRunningApps,
+            PickInstalledApps,
             Confirm);
 
-        // Reads what the allow-list holds now rather than a copy taken at startup: the user can
-        // add something on the Allow-list tab and come straight back here.
-        InstalledPrograms = new InstalledProgramsViewModel(
-            new InstalledProgramScanner(),
-            () => AllowList.AllowedPaths(),
-            apps => AllowList.AddApps(apps));
+        Monitor = new MonitorViewModel(ActiveConnections, History);
 
         Enforcement = new EnforcementViewModel(
             CoreServices.CreateEnforcementController(),
@@ -52,12 +48,19 @@ public sealed class MainViewModel : ObservableObject
 
         Settings = new SettingsViewModel();
 
+        // The allow-list leads and opens by default: the question people come with is which
+        // software may reach the internet, and watching what it does is secondary to that.
         Sections = new ObservableCollection<NavSectionViewModel>
         {
-            new("Đang kết nối", "#5AA9FF", ActiveConnections),
-            new("Đã thử kết nối", "#F5B93B", History),
-            new("Danh sách cho phép", "#2BD673", AllowList),
-            new("Phần mềm đã cài", "#B48CFF", InstalledPrograms),
+            new("Phần mềm được phép", "#2BD673", AllowList),
+            new("Theo dõi", "#5AA9FF", Monitor),
+        };
+
+        // Its own list, pinned to the foot of the rail. Settings is not a peer of the two above
+        // it - it configures the application rather than the policy - and the convention of
+        // putting it last is strong enough that breaking it costs more than it gains.
+        BottomSections = new ObservableCollection<NavSectionViewModel>
+        {
             new("Cài đặt", "#94A3B8", Settings),
         };
 
@@ -67,10 +70,26 @@ public sealed class MainViewModel : ObservableObject
 
     public ObservableCollection<NavSectionViewModel> Sections { get; }
 
+    public ObservableCollection<NavSectionViewModel> BottomSections { get; }
+
+    /// <summary>
+    /// The section on screen.
+    /// </summary>
+    /// <remarks>
+    /// Null is ignored on purpose. The rail is two lists, so whichever one did not make the
+    /// selection clears its own and writes null back; taking that literally would blank the
+    /// window every time the user moved between the two halves.
+    /// </remarks>
     public NavSectionViewModel SelectedSection
     {
         get => _selectedSection;
-        set => SetProperty(ref _selectedSection, value);
+        set
+        {
+            if (value is not null)
+            {
+                SetProperty(ref _selectedSection, value);
+            }
+        }
     }
 
     public ActiveConnectionsViewModel ActiveConnections { get; }
@@ -79,7 +98,7 @@ public sealed class MainViewModel : ObservableObject
 
     public AllowListViewModel AllowList { get; }
 
-    public InstalledProgramsViewModel InstalledPrograms { get; }
+    public MonitorViewModel Monitor { get; }
 
     public EnforcementViewModel Enforcement { get; }
 
@@ -143,6 +162,22 @@ public sealed class MainViewModel : ObservableObject
                 .Select(a => new ScannedSelection(a.Name, a.ExecutablePath))
                 .ToList()
             : null;
+    }
+
+    /// <summary>Opens the installed-programs picker and returns what was ticked.</summary>
+    private static IReadOnlyList<ScannedSelection>? PickInstalledApps()
+    {
+        var window = new Views.InstalledProgramsWindow(
+            new InstalledProgramsViewModel(
+                new InstalledProgramScanner(),
+                () => CoreServices.CreateAllowListStore().Load().Apps
+                    .Select(a => a.ExecutablePath)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase)))
+        {
+            Owner = System.Windows.Application.Current.MainWindow,
+        };
+
+        return window.ShowDialog() == true ? window.Selected : null;
     }
 
     private static bool Confirm(string title, string message) =>
