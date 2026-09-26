@@ -1,6 +1,6 @@
 # Khoá outbound lúc khởi động (boot guard)
 
-**Status:** Phase 1-3 xong. Phase 4: reboot thật đạt (khoá chặn trong khe hở, mở chốt 11 s sau boot, trước đăng nhập) — còn bước 5-6 (tắt chặn, đường hỏng).
+**Status:** Xong. Reboot thật đạt (khoá chặn trong khe hở, mở chốt 11 s sau boot, trước đăng nhập); bật/tắt chặn qua UI thật đạt. Bước 5-6 bỏ, có lý do trong report.
 **Ngày tạo:** 2026-09-26
 **Yêu cầu:** "Khi khởi động cũng không được app nào đã chặn internet có thể vào trong một thoáng chốc."
 
@@ -49,7 +49,7 @@ thì. Nên dùng hai mảnh trong một sublayer riêng của EVBlocker:
 | 1 | [Lõi WFP: cài/gỡ khoá, chốt mở, trạng thái](phase-01-wfp-guard-core.md) — **xong** | — |
 | 2 | [Gắn vào vòng đời bật/tắt chặn + task khởi động](phase-02-lifecycle-wiring.md) — **xong** | 1 |
 | 3 | [Đường khôi phục + tài liệu](phase-03-recovery-and-docs.md) — **xong** | 1 |
-| 4 | [Kiểm chứng trên máy thật, có reboot](phase-04-verification.md) — **reboot đạt**, còn bước 5-6 | 2, 3 |
+| 4 | [Kiểm chứng trên máy thật, có reboot](phase-04-verification.md) — **xong** | 2, 3 |
 
 ## Tiêu chí chấp nhận
 

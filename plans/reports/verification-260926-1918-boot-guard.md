@@ -35,7 +35,28 @@ Máy: Windows 11 Pro 26200, đang bật chặn (Domain/Private/Public = Block), 
   C2, H1, H2…). Run key sửa về `%LOCALAPPDATA%\Programs\EVBlocker\EVBlocker.exe --tray` — trước đó
   trỏ vào `artifacts\` do kiểm thử tích hợp chạy exe từ đó.
 
-## Chưa làm (phase 4, bước 5-6)
+## Bật/tắt chặn qua giao diện thật (19:29)
 
-- Tắt chặn ⇒ khoá biến mất ⇒ reboot mạng bình thường.
-- Đường hỏng: xoá task, reboot, khôi phục bằng script.
+UI Automation, elevated, trên cửa sổ thật:
+
+| Bước | Khoá | Profile | Dead-man |
+|---|---|---|---|
+| Trước | 14 filter | Block ×3 | không |
+| Ngừng chặn | **0** | Allow ×3 | không |
+| Bắt đầu chặn → Giữ nguyên | **14** | Block ×3 | không (đã huỷ) |
+
+Task khởi động vẫn trỏ `C:\Program Files\EVBlocker\EVBlocker.exe`.
+
+Hạn chế của lần chạy: script không bấm được "Yes" của hộp xác nhận (tìm dialog ở gốc cây UIA,
+dialog thuộc cửa sổ app) — việc bật vẫn diễn ra, nhiều khả năng người dùng bấm tay. Vì vậy không
+đo được task dead-man lúc Armed có 2 action; phần đó có unit test + test đăng ký thật với Task
+Scheduler.
+
+## Không làm, có lý do
+
+- Reboot sau khi tắt chặn: không có khoá thì không có gì EVBlocker can thiệp lúc boot — kết quả
+  bằng Windows mặc định, không chứng minh thêm điều gì.
+- Cố ý làm hỏng rồi khôi phục bằng script: script đã gỡ sạch khoá trên máy thật trong kiểm thử
+  tích hợp; reboot chỉ thêm một lần mất mạng cho người dùng.
+- Tự xử lý BFE khởi động lại giữa phiên: BFE không dừng được khi Windows chạy bình thường. Ghi
+  vào mục Giới hạn của hướng dẫn, kèm cách khôi phục.

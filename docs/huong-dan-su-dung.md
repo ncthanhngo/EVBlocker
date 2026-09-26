@@ -369,6 +369,12 @@ trợ.
 khởi động mà Windows để mở (xem [Khoá lúc khởi động](#khoá-lúc-khởi-động)). Một phần mềm có quyền
 admin tự gỡ được nó, như gỡ được rule.
 
+**Nếu service Base Filtering Engine (BFE) khởi động lại mà máy không khởi động lại**, khoá bật lên
+và máy mất mạng tới lần khởi động sau, hoặc tới khi mở EVBlocker bằng quyền quản trị. BFE là
+service lõi, Windows không cho dừng khi đang chạy bình thường, nên chuyện này gần như chỉ xảy ra
+khi có người cố tình can thiệp. Cách xử lý như mục
+[Mất mạng sau khi khởi động lại](#mất-mạng-sau-khi-khởi-động-lại).
+
 **UDP không thấy được đích ở tab Đang kết nối.** Windows không cung cấp địa chỉ đích trong bảng
 UDP, kể cả với socket đã kết nối. Nghĩa là QUIC/HTTP3 và DNS không xác định được đích bằng cách
 quét. Mục **Đã thử kết nối** thì có — event 5156/5157 *có* kèm địa chỉ đích cho UDP.
