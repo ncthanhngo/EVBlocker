@@ -92,6 +92,14 @@ Baseline allow-list là **file JSON**, không phải code — nâng cấp danh s
 
 06 làm được song song sau 02.
 
+## Tài liệu
+
+Plan này ghi lại **cách dự án được dựng** — các phase, chỗ lệch so với dự kiến, và kết quả kiểm
+chứng. Còn **sản phẩm là gì** thì ở `docs/`:
+
+- [`docs/huong-dan-su-dung.md`](../../docs/huong-dan-su-dung.md) — cho người dùng
+- [`docs/system-architecture.md`](../../docs/system-architecture.md) — cho người bảo trì
+
 ## Kiểm chứng đường ghi
 
 Các thao tác cần quyền admin không unit test được, nên Phase 02-04 đều ghi "chưa verify". Công cụ
