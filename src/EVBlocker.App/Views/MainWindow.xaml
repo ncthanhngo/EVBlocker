@@ -69,7 +69,18 @@
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
           <DataGrid ItemsSource="{Binding Rows}">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="ỨNG DỤNG" Binding="{Binding AppName}" Width="220" />
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="220">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <Image Style="{StaticResource AppIconImage}"
+                             Source="{Binding FullPath, Converter={StaticResource AppIcon}}" />
+                      <TextBlock Text="{Binding AppName}" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="70" />
               <DataGridTextColumn Header="ĐÍCH" Binding="{Binding Destination}" Width="180" />
               <DataGridTextColumn Header="CỔNG" Binding="{Binding Port}" Width="70" />
@@ -119,7 +130,18 @@
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
           <DataGrid ItemsSource="{Binding Rows}">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="ỨNG DỤNG" Binding="{Binding AppName}" Width="220" />
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="220">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <Image Style="{StaticResource AppIconImage}"
+                             Source="{Binding FullPath, Converter={StaticResource AppIcon}}" />
+                      <TextBlock Text="{Binding AppName}" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTextColumn Header="BỊ CHẶN" Binding="{Binding BlockedCount}" Width="90" />
               <DataGridTextColumn Header="ĐƯỢC PHÉP" Binding="{Binding AllowedCount}" Width="110" />
               <DataGridTextColumn Header="LẦN CUỐI" Binding="{Binding LastSeen}" Width="140" />
@@ -162,7 +184,18 @@
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
           <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="ỨNG DỤNG" Binding="{Binding DisplayName}" Width="220" />
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="220">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <Image Style="{StaticResource AppIconImage}"
+                             Source="{Binding ExecutablePath, Converter={StaticResource AppIcon}}" />
+                      <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTextColumn Header="THÊM LÚC" Binding="{Binding AddedAt}" Width="150" />
               <DataGridTextColumn Header="TÌNH TRẠNG" Binding="{Binding Status}" Width="160">
                 <DataGridTextColumn.ElementStyle>

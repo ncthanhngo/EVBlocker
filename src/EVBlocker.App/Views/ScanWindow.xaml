@@ -104,7 +104,18 @@
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
 
-            <DataGridTextColumn Header="ỨNG DỤNG" Binding="{Binding Name}" Width="190" />
+            <DataGridTemplateColumn Header="ỨNG DỤNG" Width="190">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal">
+                    <Image Style="{StaticResource AppIconImage}"
+                           Source="{Binding ExecutablePath, Converter={StaticResource AppIcon}}" />
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
             <DataGridTextColumn Header="TIẾN TRÌNH" Binding="{Binding ProcessCountText}" Width="110" />
             <DataGridTextColumn Header="TÌNH TRẠNG" Binding="{Binding Status}" Width="130">
               <DataGridTextColumn.ElementStyle>

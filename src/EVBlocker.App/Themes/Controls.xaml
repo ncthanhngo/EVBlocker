@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:services="clr-namespace:EVBlocker.App.Services">
 
   <!--
     Control styles for EVBlocker, written against the same tokens and palette as the rest of the
@@ -12,6 +13,25 @@
     Palette keys are DynamicResource because the palette dictionary is swapped whole at runtime;
     Tokens keys are StaticResource because they do not change with the theme.
   -->
+
+  <!-- ============================ app icon ============================ -->
+
+  <!--
+    Shared by every grid that lists executables, so the four of them stay the same size and the
+    lookup cache is shared. Not themed: these are the applications' own icons.
+  -->
+  <services:ExecutableIconConverter x:Key="AppIcon" />
+
+  <Style x:Key="AppIconImage" TargetType="Image">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <!-- A 32x32 icon drawn at 16 points; the default scaler softens the edges noticeably. -->
+    <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+    <!-- Rows with no readable path keep the indent, so the names stay in one column. -->
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
 
   <!-- ============================== type ============================== -->
 

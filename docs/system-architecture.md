@@ -115,6 +115,21 @@ nguyên màu cũ sau khi đổi** và trông như lỗi render.
 Dictionary mới được thêm **trước khi** xoá cái cũ. Xoá trước sẽ có một frame không còn palette
 nào, lúc đó mọi `DynamicResource` giải về rỗng và cửa sổ vẽ trắng.
 
+## Icon ứng dụng
+
+Hỏi shell (`SHGetFileInfo`) chứ không đọc icon thẳng từ file. Rất nhiều exe phụ trợ không mang
+icon riêng; đọc thẳng thì chúng trống, còn shell trả về icon chung giống hệt Explorer. Đo trên máy
+thật: **45/45 tiến trình có icon** sau khi đổi, trước đó một phần đáng kể là ô trống.
+
+`SHFILEINFO` được đọc theo **offset trong buffer byte**, cùng cách `IpHlpApi.cs` làm, vì hai trường
+chuỗi độ dài cố định khiến struct không blittable — khai báo thành struct sẽ phải dùng `unsafe
+fixed` hoặc tự viết marshalling, trong khi chỉ cần trường đầu tiên.
+
+Chi phí đo được, mỗi đường dẫn mới: **trung vị 0,91 ms · p90 2,05 ms**, riêng lần gọi đầu tiên
+trong tiến trình **55,8 ms** do khởi động shell. Kết quả được cache theo đường dẫn và `Freeze()`,
+lần thứ hai là **0,01 ms cho 45 app**. Cache là bắt buộc chứ không phải tối ưu sớm: grid bật ảo
+hoá kèm recycling nên converter chạy lại cho mọi dòng cuộn vào tầm nhìn.
+
 ## Build và kiểm chứng
 
 ```powershell
