@@ -16,3 +16,9 @@ Cần người dùng: có reboot, cần UAC.
 
 ## Report
 `plans/reports/verification-<date>-boot-guard.md`: số liệu, log, ảnh chụp nếu cần.
+
+## Kết quả (2026-09-26 19:18) — [report](../reports/verification-260926-1918-boot-guard.md)
+
+- Bước 1-4 đạt: 5157 lúc 19:17:51 với FilterOrigin=Unknown (filter của khoá) trước khi mở chốt
+  19:17:54; firewall tiếp quản từ 19:17:56; đăng nhập 19:18:02 ⇒ không phải chờ.
+- Bước 5-6 chưa làm.
