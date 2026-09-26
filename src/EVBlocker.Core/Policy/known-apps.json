@@ -76,6 +76,170 @@
         "%LOCALAPPDATA%\\Zalo\\Zalo.exe",
         "%ProgramFiles%\\Zalo\\Zalo.exe"
       ]
+    },
+    {
+      "name": "Git",
+      "candidates": [
+        "%ProgramFiles%\\Git\\mingw64\\bin\\git.exe",
+        "%ProgramFiles(x86)%\\Git\\mingw64\\bin\\git.exe",
+        "%LOCALAPPDATA%\\Programs\\Git\\mingw64\\bin\\git.exe"
+      ]
+    },
+    {
+      "name": "Git - truyen qua HTTPS",
+      "candidates": [
+        "%ProgramFiles%\\Git\\mingw64\\libexec\\git-core\\git-remote-https.exe",
+        "%ProgramFiles(x86)%\\Git\\mingw64\\libexec\\git-core\\git-remote-https.exe",
+        "%LOCALAPPDATA%\\Programs\\Git\\mingw64\\libexec\\git-core\\git-remote-https.exe"
+      ]
+    },
+    {
+      "name": "Git - truyen qua SSH",
+      "candidates": [
+        "%ProgramFiles%\\Git\\usr\\bin\\ssh.exe",
+        "%LOCALAPPDATA%\\Programs\\Git\\usr\\bin\\ssh.exe"
+      ]
+    },
+    {
+      "name": "OpenSSH (Windows)",
+      "candidates": [
+        "%SystemRoot%\\System32\\OpenSSH\\ssh.exe"
+      ]
+    },
+    {
+      "name": "Node.js",
+      "candidates": [
+        "%ProgramFiles%\\nodejs\\node.exe",
+        "%LOCALAPPDATA%\\Programs\\nodejs\\node.exe",
+        "%APPDATA%\\nvm\\*\\node.exe"
+      ]
+    },
+    {
+      "name": "Python",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Python\\Python3*\\python.exe",
+        "%SystemDrive%\\Python3*\\python.exe",
+        "%ProgramFiles%\\Python3*\\python.exe"
+      ]
+    },
+    {
+      "name": ".NET SDK",
+      "candidates": [
+        "%ProgramFiles%\\dotnet\\dotnet.exe"
+      ]
+    },
+    {
+      "name": "Go",
+      "candidates": [
+        "%ProgramFiles%\\Go\\bin\\go.exe",
+        "%LOCALAPPDATA%\\Programs\\Go\\bin\\go.exe"
+      ]
+    },
+    {
+      "name": "Rust (cargo)",
+      "candidates": [
+        "%USERPROFILE%\\.cargo\\bin\\cargo.exe"
+      ]
+    },
+    {
+      "name": "Rust (rustup)",
+      "candidates": [
+        "%USERPROFILE%\\.cargo\\bin\\rustup.exe"
+      ]
+    },
+    {
+      "name": "Java",
+      "candidates": [
+        "%ProgramFiles%\\Eclipse Adoptium\\*\\bin\\java.exe",
+        "%ProgramFiles%\\Java\\*\\bin\\java.exe",
+        "%ProgramFiles%\\Microsoft\\jdk*\\bin\\java.exe"
+      ]
+    },
+    {
+      "name": "GitHub CLI",
+      "candidates": [
+        "%ProgramFiles%\\GitHub CLI\\gh.exe",
+        "%LOCALAPPDATA%\\GitHubCLI\\gh.exe"
+      ]
+    },
+    {
+      "name": "Docker Desktop",
+      "candidates": [
+        "%ProgramFiles%\\Docker\\Docker\\resources\\com.docker.backend.exe"
+      ]
+    },
+    {
+      "name": "Visual Studio",
+      "candidates": [
+        "%ProgramFiles%\\Microsoft Visual Studio\\*\\*\\Common7\\IDE\\devenv.exe",
+        "%ProgramFiles(x86)%\\Microsoft Visual Studio\\*\\*\\Common7\\IDE\\devenv.exe"
+      ]
+    },
+    {
+      "name": "Cursor",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\cursor\\Cursor.exe"
+      ]
+    },
+    {
+      "name": "Windsurf",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Windsurf\\Windsurf.exe"
+      ]
+    },
+    {
+      "name": "IntelliJ IDEA",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\IntelliJ IDEA\\bin\\idea64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\IntelliJ IDEA\\*\\*\\bin\\idea64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\idea64.exe"
+      ]
+    },
+    {
+      "name": "PyCharm",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\PyCharm\\bin\\pycharm64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\PyCharm\\*\\*\\bin\\pycharm64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\pycharm64.exe"
+      ]
+    },
+    {
+      "name": "WebStorm",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\WebStorm\\bin\\webstorm64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\WebStorm\\*\\*\\bin\\webstorm64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\webstorm64.exe"
+      ]
+    },
+    {
+      "name": "CLion",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\CLion\\bin\\clion64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\CLion\\*\\*\\bin\\clion64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\clion64.exe"
+      ]
+    },
+    {
+      "name": "Rider",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Rider\\bin\\rider64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\Rider\\*\\*\\bin\\rider64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\rider64.exe"
+      ]
+    },
+    {
+      "name": "DataGrip",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\DataGrip\\bin\\datagrip64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\DataGrip\\*\\*\\bin\\datagrip64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\datagrip64.exe"
+      ]
+    },
+    {
+      "name": "JetBrains Toolbox",
+      "candidates": [
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\bin\\jetbrains-toolbox.exe"
+      ]
     }
   ]
 }

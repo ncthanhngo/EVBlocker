@@ -45,10 +45,22 @@ Dùng máy vài ngày như bình thường, rồi xem tab **Đã thử kết n�
 
 ### 2. Dựng allow-list
 
-Một số ứng dụng phổ biến **tự có sẵn trong allow-list** mỗi lần mở ứng dụng, không cần bấm gì:
+Một số ứng dụng **tự có sẵn trong allow-list** mỗi lần mở ứng dụng, không cần bấm gì. Danh mục
+hướng vào máy trạm lập trình:
 
-Chrome · Edge · Visual Studio Code · GoLand · Claude CLI · Claude Desktop · Codex CLI ·
-OneDrive · Google Drive · Zalo
+| Nhóm | Ứng dụng |
+|---|---|
+| Mã nguồn | Git · Git HTTPS · Git SSH · OpenSSH · GitHub CLI |
+| Runtime, trình quản lý gói | Node.js · Python · .NET SDK · Go · Rust (cargo, rustup) · Java |
+| IDE, editor | VS Code · Visual Studio · GoLand · IntelliJ IDEA · PyCharm · WebStorm · CLion · Rider · DataGrip · JetBrains Toolbox · Cursor · Windsurf |
+| AI CLI | Claude CLI · Claude Desktop · Codex CLI |
+| Container | Docker Desktop |
+| Trình duyệt, đồng bộ, liên lạc | Chrome · Edge · OneDrive · Google Drive · Zalo |
+
+**Git cần ba file, không phải một.** `cmd\git.exe` chỉ là shim 47 KB; client thật nằm ở
+`mingw64\bin\git.exe`, còn việc tải/đẩy qua HTTPS do một file riêng `git-remote-https.exe` làm.
+Chỉ cho phép file trên PATH thì `git clone https://...` vẫn bị chặn trong khi allow-list trông
+như đã đúng.
 
 Chỉ những cái **thật sự đã cài trên máy** mới được thêm. Không thấy một cái trong danh sách nghĩa
 là máy chưa cài nó — tạo rule trỏ vào file không tồn tại thì Windows vẫn nhận, và allow-list trông
@@ -185,6 +197,23 @@ này giúp kiểm soát phần mềm hoạt động bình thường, không ch�
 
 **Cho phép công cụ chạy script = cho phép mọi thứ chạy qua nó.** `powershell.exe`, `cmd.exe`,
 `curl.exe`, `python.exe` và tương tự — ứng dụng có cảnh báo trước khi thêm.
+
+**`node.exe` và `python.exe` nằm trong danh mục mặc định, và chúng chạy được mã tuỳ ý.** Máy trạm
+lập trình không làm việc được nếu thiếu chúng — `npm install`, `pip install`, và phần lớn CLI đều
+chạy qua chúng. Đây là đánh đổi có chủ ý, không phải sơ suất: ứng dụng nói rõ trên thanh trạng
+thái mỗi khi tự thêm một công cụ loại này.
+
+**`powershell.exe`, `pwsh.exe`, `cmd.exe`, `curl.exe` cố ý KHÔNG nằm trong mặc định.** Chúng cũng
+chạy được mã tuỳ ý nhưng việc ra internet của chúng là tuỳ chọn (`Install-Module`,
+`Invoke-WebRequest`), khác với runtime mà toolchain bắt buộc phải có. Cần thì thêm tay qua **Thêm
+ứng dụng…**, ứng dụng sẽ hỏi lại trước khi thêm.
+
+**`winget` không cho phép theo đường dẫn được.** File `WindowsApps\winget.exe` là alias thực thi,
+**0 byte** — rule trỏ vào đó không khớp tiến trình thật, vốn nằm trong `Program Files\WindowsApps`
+với đường dẫn đổi theo mỗi bản cập nhật. Tương tự với các ứng dụng Microsoft Store khác.
+
+**Tiến trình chạy trong WSL2 không chặn được theo cách này.** Chúng là tiến trình Linux trong một
+máy ảo, không phải tiến trình Windows, nên rule theo đường dẫn exe không áp dụng cho chúng.
 
 **CLI viết bằng Node không cho phép riêng được.** Gemini CLI chẳng hạn, gói npm của nó khai báo
 `bin: gemini.js` — không có file `.exe` nào, tiến trình thật sự mở kết nối là `node.exe`. Cho

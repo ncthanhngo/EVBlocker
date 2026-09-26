@@ -158,13 +158,21 @@ public sealed class AllowListViewModel : ObservableObject
             return;
         }
 
-        IReadOnlyList<string> seeded = SeedDefaults();
+        SeedResult seeded = SeedDefaults();
         Refresh();
 
         if (seeded.Count > 0)
         {
-            Status = $"Đã thêm mặc định {seeded.Count}: {string.Join(", ", seeded)}. "
+            Status = $"Đã thêm mặc định {seeded.Count}: {string.Join(", ", seeded.Names)}. "
                 + "Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+
+            if (seeded.ScriptHosts.Count > 0)
+            {
+                // Adding one of these by hand asks first. Seeding cannot ask - nobody is at the
+                // keyboard yet - so it says so instead of letting the warning quietly not happen.
+                Status += $" Trong đó {string.Join(", ", seeded.ScriptHosts)} chạy được mã tuỳ ý: "
+                    + "cho phép chúng là cho phép mọi script chạy qua chúng.";
+            }
         }
     }
 
@@ -176,7 +184,7 @@ public sealed class AllowListViewModel : ObservableObject
     /// becomes a default too without the user having to know a button exists. Removals are
     /// recorded in the document, which is what stops this from undoing them.
     /// </remarks>
-    private IReadOnlyList<string> SeedDefaults()
+    private SeedResult SeedDefaults()
     {
         IReadOnlyList<DiscoveredApp> missing;
         try
@@ -186,12 +194,12 @@ public sealed class AllowListViewModel : ObservableObject
         catch (InvalidDataException)
         {
             // An unreadable catalogue costs the defaults, not the list the user already has.
-            return Array.Empty<string>();
+            return SeedResult.None;
         }
 
         if (missing.Count == 0)
         {
-            return Array.Empty<string>();
+            return SeedResult.None;
         }
 
         foreach (DiscoveredApp app in missing)
@@ -200,7 +208,22 @@ public sealed class AllowListViewModel : ObservableObject
         }
 
         _store.Save(_document);
-        return missing.Select(app => app.Name).ToList();
+
+        return new SeedResult(
+            missing.Select(app => app.Name).ToList(),
+            missing
+                .Where(app => Interpreters.Contains(System.IO.Path.GetFileName(app.ExecutablePath)))
+                .Select(app => app.Name)
+                .ToList());
+    }
+
+    /// <summary>What a seed added, and which of those can run arbitrary code.</summary>
+    private sealed record SeedResult(IReadOnlyList<string> Names, IReadOnlyList<string> ScriptHosts)
+    {
+        public static readonly SeedResult None =
+            new(Array.Empty<string>(), Array.Empty<string>());
+
+        public int Count => Names.Count;
     }
 
     /// <summary>Adds one executable, and clears any record of it having been removed before.</summary>

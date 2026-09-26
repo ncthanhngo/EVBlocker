@@ -125,9 +125,39 @@ public sealed class KnownAppsTests : IDisposable
     [InlineData("OneDrive")]
     [InlineData("Google Drive")]
     [InlineData("Zalo")]
+    [InlineData("Claude Desktop")]
+    [InlineData("Git")]
+    [InlineData("Node.js")]
+    [InlineData("Python")]
+    [InlineData(".NET SDK")]
+    [InlineData("GitHub CLI")]
     public void ShippedCatalogue_ContainsTheRequestedApplications(string name)
     {
         Assert.Contains(new KnownApps(NoOverride).Load().Apps, a => a.Name == name);
+    }
+
+    /// <summary>
+    /// A path holding a control character is a mangled escape, never a real location: the JSON
+    /// still parses and the entry then matches nothing at all, silently.
+    /// </summary>
+    [Fact]
+    public void NoCandidate_ContainsAControlCharacter()
+    {
+        Assert.All(new KnownApps(NoOverride).Load().Apps, app =>
+            Assert.All(app.Candidates, candidate =>
+                Assert.DoesNotContain(candidate, char.IsControl)));
+    }
+
+    /// <summary>
+    /// Every catalogued path must end in .exe. The firewall scopes a rule to an image path, so a
+    /// script or a shim named there would produce a rule no process ever matches.
+    /// </summary>
+    [Fact]
+    public void EveryCandidate_NamesAnExecutable()
+    {
+        Assert.All(new KnownApps(NoOverride).Load().Apps, app =>
+            Assert.All(app.Candidates, candidate =>
+                Assert.EndsWith(".exe", candidate, StringComparison.OrdinalIgnoreCase)));
     }
 
     [Fact]
