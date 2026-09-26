@@ -486,3 +486,9 @@ $RECYCLE.BIN/
 # The *.app rule above is meant for macOS application bundles, but it also matches this
 # project directory, which silently excluded the entire WPF app from the repository.
 !src/EVBlocker.App/
+
+# The Visual Studio template ignores *.pubxml because web deploy profiles can hold credentials.
+# This one is a desktop publish profile with no secrets in it, and the release workflow cannot
+# run without it. Second rule in this template to silently drop something essential - see the
+# src/EVBlocker.App/ exception above for the first.
+!src/EVBlocker.App/Properties/PublishProfiles/*.pubxml
