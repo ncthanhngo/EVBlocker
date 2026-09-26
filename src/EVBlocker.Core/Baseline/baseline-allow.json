@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "services": [
+    {
+      "service": "Dnscache",
+      "displayName": "DNS Client",
+      "reason": "Phân giải tên miền. Không có nó thì không truy cập được gì bằng tên."
+    },
+    {
+      "service": "Dhcp",
+      "displayName": "DHCP Client",
+      "reason": "Xin và gia hạn địa chỉ IP. Mất nó là mất mạng sau khi hết hạn lease."
+    },
+    {
+      "service": "NlaSvc",
+      "displayName": "Network Location Awareness",
+      "reason": "Xác định mạng đang dùng là Domain, Private hay Public. Sai profile thì rule áp sai."
+    },
+    {
+      "service": "wuauserv",
+      "displayName": "Windows Update",
+      "reason": "Tải bản vá bảo mật."
+    },
+    {
+      "service": "BITS",
+      "displayName": "Background Intelligent Transfer Service",
+      "reason": "Kênh tải nền mà Windows Update và nhiều thành phần khác dùng."
+    },
+    {
+      "service": "DoSvc",
+      "displayName": "Delivery Optimization",
+      "reason": "Phân phối bản cập nhật. Thiếu nó thì Windows Update chậm hoặc treo."
+    },
+    {
+      "service": "WinDefend",
+      "displayName": "Microsoft Defender Antivirus",
+      "reason": "Cập nhật định nghĩa virus. Chặn nó là để máy chạy với bộ định nghĩa cũ dần."
+    },
+    {
+      "service": "cryptsvc",
+      "displayName": "Cryptographic Services",
+      "reason": "Cập nhật danh sách chứng chỉ gốc và kiểm tra thu hồi. Thiếu nó thì TLS bắt đầu lỗi."
+    },
+    {
+      "service": "W32Time",
+      "displayName": "Windows Time",
+      "reason": "Đồng bộ giờ. Lệch giờ làm chứng chỉ TLS bị coi là không hợp lệ."
+    },
+    {
+      "service": "sppsvc",
+      "displayName": "Software Protection",
+      "reason": "Kích hoạt và duy trì bản quyền Windows."
+    }
+  ]
+}

@@ -1,9 +1,36 @@
 # Phase 03 — Safety layer
 
-**Status:** chưa làm — phụ thuộc Phase 02
+**Status:** xong. XML của dead-man đã verify với Task Scheduler thật; **netsh export/import chưa chạy** (cần admin).
 **Chạm firewall:** có (export/import config)
 
 Phase này là **điều kiện bắt buộc** để được làm Phase 04. Không có nó, bật default-deny là tự khoá mạng máy.
+
+## Lệch so với plan: schtasks thay vì COM Task Scheduler
+
+Plan ban đầu nói dùng `ITaskService` để khỏi parse text. Lý do đó **không áp dụng ở đây**: tạo,
+xoá và kiểm tra task chỉ cần exit code, và đã đo được `schtasks /Query` trả **exit 1** khi task
+không tồn tại — không phụ thuộc ngôn ngữ hiển thị. Đi đường COM nghĩa là sinh và nối thêm khoảng
+mười interface nữa mà không thêm hành vi nào.
+
+Định nghĩa task viết bằng XML nên mọi thiết lập đều tường minh và test được.
+
+## Kết quả verify (2026-09-26)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `dotnet test` | 159/159 pass (+47 cho Phase 03) |
+| 10 service trong baseline | **10/10 tồn tại trên máy** (`Get-Service`) |
+| `schtasks /Query` khi task không có | exit 1 — xác nhận kiểm tra tồn tại không cần parse text |
+| `netsh advfirewall export` không admin | báo "requires elevation", exit -1 → luồng safety là admin-only |
+| **Task Scheduler chấp nhận XML sinh ra** | **có** — test integration đăng ký task thật rồi xoá |
+| Cleanup sau test | không còn task `EVBlocker*` nào sót |
+| Baseline nhúng vào assembly | `EVBlocker.Core.Baseline.baseline-allow.json` đúng tên |
+
+Test integration đổi principal từ SYSTEM sang user hiện tại để chạy được không cần admin. Phần
+duy nhất còn chưa kiểm là **đăng ký dưới SYSTEM có được phép không** — đó là câu hỏi về quyền,
+không phải về schema.
+
+**Chưa verify:** `ConfigBackup.Create/Restore` (netsh) và `Arm/Disarm` dưới SYSTEM. Cả hai cần admin.
 
 ## Requirements
 

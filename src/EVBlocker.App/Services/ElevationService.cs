@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Security.Principal;
 
 namespace EVBlocker.App.Services;
 
@@ -13,9 +12,11 @@ namespace EVBlocker.App.Services;
 /// </remarks>
 public static class ElevationService
 {
-    private static readonly Lazy<bool> Elevated = new(DetectElevation);
-
-    public static bool IsElevated => Elevated.Value;
+    /// <summary>
+    /// Detection lives in Core, where the privileged work is, so the UI and the operations it
+    /// drives can never disagree about whether this process is elevated.
+    /// </summary>
+    public static bool IsElevated => Core.Elevation.IsElevated;
 
     /// <summary>
     /// Starts an elevated copy and reports whether it was launched. Returns false when the user
@@ -48,11 +49,5 @@ public static class ElevationService
             // Raised when the UAC prompt is cancelled.
             return false;
         }
-    }
-
-    private static bool DetectElevation()
-    {
-        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
-        return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
 }
