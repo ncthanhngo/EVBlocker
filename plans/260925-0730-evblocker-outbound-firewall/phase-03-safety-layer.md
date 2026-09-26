@@ -26,11 +26,14 @@ mười interface nữa mà không thêm hành vi nào.
 | Cleanup sau test | không còn task `EVBlocker*` nào sót |
 | Baseline nhúng vào assembly | `EVBlocker.Core.Baseline.baseline-allow.json` đúng tên |
 
-Test integration đổi principal từ SYSTEM sang user hiện tại để chạy được không cần admin. Phần
-duy nhất còn chưa kiểm là **đăng ký dưới SYSTEM có được phép không** — đó là câu hỏi về quyền,
-không phải về schema.
+Test integration đổi principal từ SYSTEM sang user hiện tại để chạy được không cần admin.
 
-**Chưa verify:** `ConfigBackup.Create/Restore` (netsh) và `Arm/Disarm` dưới SYSTEM. Cả hai cần admin.
+**Đã verify (elevated, 2026-09-26):** `netsh advfirewall export` tạo được file có nội dung và
+`List()` tìm thấy; `Arm/Disarm` đăng ký và huỷ được task **dưới SYSTEM**, với PowerShell xác nhận
+độc lập `Principal.UserId` là SYSTEM và `StartWhenAvailable = True`.
+
+**Chưa verify:** `ConfigBackup.Restore` — chạy nó sẽ ghi đè toàn bộ cấu hình firewall của máy, nên
+để lại cho môi trường máy ảo.
 
 ## Requirements
 

@@ -31,8 +31,9 @@ phóng. Gom vào đúng 2 helper (`ReadBstr`/`WriteBstr`) để không sót ch�
 | Rule scope theo service | đọc đúng `svc=dhcp`, `svc=gpsvc`, `svc=upnphost` — cần cho baseline Phase 03 |
 | End-to-end store → applier → COM | `Plan()` trên allow-list thật trả `add=2 remove=0`, tên rule có digest đúng |
 
-**Chưa verify:** `AddRule` / `RemoveRule`. Cả hai dùng chung interface đã sinh và các setter đối
-xứng với getter đã chứng minh, nhưng chưa có lần chạy thật nào.
+**Đã verify (elevated, 2026-09-26):** `AddRule` và `RemoveRule` chạy thật. Rule tạo ra có đúng
+đường dẫn, hướng, action và profiles; **PowerShell xác nhận độc lập** rule xuất hiện rồi biến mất
+sau khi xoá.
 
 ## Requirements
 

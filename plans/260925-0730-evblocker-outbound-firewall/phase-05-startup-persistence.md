@@ -42,7 +42,11 @@ runtime map `E_ACCESSDENIED` thành `UnauthorizedAccessException` ngay ở tần
 đó là **code chết** đúng cho trường hợp nó sinh ra để xử lý. Thông báo lỗi trước khi sửa là chuỗi
 COM thô.
 
-**Chưa verify:** đăng ký startup task dưới SYSTEM, và một lần reboot thật.
+**Đã verify gián tiếp (elevated, 2026-09-26):** đăng ký task **dưới SYSTEM** chạy thật qua
+`EVBlocker.Verify`. Startup task dùng chung `SchTasksHost.Register` với dead-man switch — chỉ khác
+phần XML (BootTrigger thay vì TimeTrigger), và phần XML đó có test riêng.
+
+**Chưa verify:** một lần reboot thật, để xem task có chạy và reconciler có làm đúng việc không.
 
 ## Tiền đề cần hiểu đúng
 

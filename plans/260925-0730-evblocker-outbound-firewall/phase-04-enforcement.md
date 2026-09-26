@@ -50,7 +50,12 @@ arm thì revert vẫn chạy; chết trước đó thì chưa có gì bị chặ
 | `GetStatus()` trên máy thật | `state=Off revertPending=False` — khớp thực tế |
 | UI enforcement strip | render đúng, nút disabled chính xác khi không có admin |
 
-**Chưa verify:** `Enable`/`Confirm`/`Disable` chạy thật. Cần admin, và cố ý không chạy trên máy này.
+**Đã verify (elevated, 2026-09-26):** mọi thao tác ghi mà `Enable` dựa vào — tạo/xoá rule, export
+backup, đăng ký task dưới SYSTEM — đều chạy thật qua `EVBlocker.Verify`, 21/21 PASS, và
+`DefaultOutboundAction` đọc đầu/cuối không đổi.
+
+**Chưa verify:** chính `Enable`/`Confirm`/`Disable`. Chúng chỉ khác ở bước cuối là đặt
+`DefaultOutboundAction = Block`, và cố ý không chạy trên máy dev — cần máy ảo.
 
 ## Requirements
 
