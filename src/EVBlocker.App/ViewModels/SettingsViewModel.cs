@@ -6,7 +6,7 @@ using EVBlocker.App.Theming;
 
 namespace EVBlocker.App.ViewModels;
 
-/// <summary>Appearance and updates.</summary>
+/// <summary>Start-up, appearance and updates.</summary>
 public sealed class SettingsViewModel : ObservableObject
 {
     private readonly RelayCommand _checkUpdateCommand;
@@ -15,6 +15,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _updateStatus = "Chưa kiểm tra.";
     private string? _releaseUrl;
     private bool _checking;
+    private bool _startWithWindows = UserSettingsStore.Load().StartWithWindows;
 
     public SettingsViewModel()
     {
@@ -48,6 +49,25 @@ public sealed class SettingsViewModel : ObservableObject
             UserSettingsStore.Save(settings);
 
             OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Whether EVBlocker starts in the tray when the user signs in.</summary>
+    public bool StartWithWindows
+    {
+        get => _startWithWindows;
+        set
+        {
+            if (!SetProperty(ref _startWithWindows, value))
+            {
+                return;
+            }
+
+            UserSettings settings = UserSettingsStore.Load();
+            settings.StartWithWindows = value;
+            UserSettingsStore.Save(settings);
+
+            LoginStartup.Apply(value);
         }
     }
 

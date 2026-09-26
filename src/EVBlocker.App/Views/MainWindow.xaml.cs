@@ -21,12 +21,20 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _viewModel;
 
-        // Polling starts once the window is up and stops with it: a timer left running against
-        // a closed window keeps scanning for nothing.
-        Loaded += (_, _) =>
+        Loaded += (_, _) => HookDeviceNotifications();
+
+        // Polling follows visibility, not the window's lifetime: closing hides the window to the
+        // tray, and a timer left running behind a hidden window keeps scanning for nothing.
+        IsVisibleChanged += (_, _) =>
         {
-            _viewModel.ActiveConnections.Start();
-            HookDeviceNotifications();
+            if (IsVisible)
+            {
+                _viewModel.ActiveConnections.Start();
+            }
+            else
+            {
+                _viewModel.ActiveConnections.Stop();
+            }
         };
 
         Closed += (_, _) => _viewModel.ActiveConnections.Stop();
@@ -115,4 +123,20 @@ public partial class MainWindow : Window
             : WindowState.Maximized;
 
     private void OnClose(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// Hides to the tray rather than closing, for the title-bar button and Alt+F4 alike; only
+    /// an exit from the tray menu, a relaunch or the end of the session really closes.
+    /// </summary>
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (!App.IsExiting)
+        {
+            e.Cancel = true;
+            Hide();
+            App.OnHiddenToTray();
+        }
+
+        base.OnClosing(e);
+    }
 }

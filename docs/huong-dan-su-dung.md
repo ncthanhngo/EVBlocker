@@ -9,6 +9,20 @@ file duy nhất, **không cần cài .NET**.
 
 File chưa được ký số nên SmartScreen sẽ cảnh báo ở lần chạy đầu: bấm **More info → Run anyway**.
 
+## Chạy nền ở khay hệ thống
+
+Nút đóng cửa sổ (và Alt+F4) **không tắt** ứng dụng mà ẩn nó xuống khay hệ thống, góc phải thanh
+tác vụ. Bấm vào biểu tượng để mở lại; muốn tắt hẳn, bấm phải → **Thoát EVBlocker**. Mở lại
+shortcut khi ứng dụng đang chạy chỉ đưa cửa sổ cũ lên, không mở thêm bản thứ hai.
+
+Mặc định ứng dụng **tự chạy khi đăng nhập Windows**, ẩn ở khay. Tắt ở **Cài đặt → Chạy nền**.
+Ứng dụng ghi mục `EVBlocker` vào `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (thấy trong
+tab Startup của Task Manager), trỏ vào đúng file exe đang chạy — chuyển file sang chỗ khác rồi mở
+lại một lần là mục này tự cập nhật.
+
+Việc chặn **không phụ thuộc** vào ứng dụng có đang chạy hay không: nó nằm trong cấu hình Windows
+Firewall. Chạy nền chỉ để bạn xem và chỉnh nhanh.
+
 ## Quyền quản trị
 
 | Việc | Cần quyền quản trị? |
@@ -226,7 +240,7 @@ nhất — không bị bỏ sót.
 | `%ProgramData%\EVBlocker\backups\*.wfw` | Bản sao lưu firewall, giữ 10 bản mới nhất |
 | `%ProgramData%\EVBlocker\reconcile.log` | Nhật ký của lần chạy lúc khởi động |
 | `%ProgramData%\EVBlocker\quarantine\` | File cách ly từ USB, kèm manifest ghi nơi lấy ra |
-| `%LOCALAPPDATA%\EVBlocker\settings.json` | Giao diện sáng/tối (riêng từng người dùng) |
+| `%LOCALAPPDATA%\EVBlocker\settings.json` | Giao diện sáng/tối, tự chạy khi đăng nhập (riêng từng người dùng) |
 | `%LOCALAPPDATA%\EVBlocker\crash.log` | Lỗi không xử lý được |
 
 Rule trong Windows Firewall đều mang group `EVBlocker` — xem trong `wf.msc`, hoặc:

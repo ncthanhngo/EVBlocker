@@ -5,6 +5,11 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
+    <!-- For NotifyIcon only; see Services/TrayIcon.cs. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- WFAC010 wants DPI awareness moved out of the manifest into the WinForms startup API. That
+         is advice for a WinForms application; this is WPF, where the manifest is the right place. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>EVBlocker</AssemblyName>
     <RootNamespace>EVBlocker.App</RootNamespace>
@@ -32,6 +37,13 @@
     <!-- Also embedded as a WPF resource, which is a separate thing from ApplicationIcon:
          Window.Icon resolves through the pack URI scheme and cannot read the exe's own icon. -->
     <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WinForms is referenced for the tray icon alone. Its implicit global usings would make
+         Application, MessageBox, Button and friends ambiguous in every WPF file, so they go. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
   </ItemGroup>
 
   <ItemGroup>

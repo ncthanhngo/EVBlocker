@@ -30,6 +30,10 @@ public partial class App : Application
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "EVBlocker");
 
+    private SingleInstance? _instance;
+    private TrayIcon? _tray;
+    private MainWindow? _window;
+
     public App()
     {
         // Registered in the constructor, which runs before InitializeComponent, so a failure
@@ -43,18 +47,103 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        if (e.Args.Any(a => string.Equals(a, StartupReconcileTask.ReconcileSwitch, StringComparison.OrdinalIgnoreCase)))
+        if (HasSwitch(e, StartupReconcileTask.ReconcileSwitch))
         {
             Shutdown(RunReconcile());
             return;
         }
 
+        TimeSpan claimWait = HasSwitch(e, ElevationService.RelaunchSwitch) ? TimeSpan.FromSeconds(15) : TimeSpan.Zero;
+        _instance = SingleInstance.TryClaim(
+            claimWait,
+            () => Dispatcher.BeginInvoke(ShowMainWindow),
+            out bool handedOver);
+
+        if (_instance is null)
+        {
+            if (!handedOver)
+            {
+                MessageBox.Show(
+                    "EVBlocker đang chạy với quyền quản trị. Mở nó từ biểu tượng ở khay hệ thống, góc phải thanh tác vụ.",
+                    "EVBlocker",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+
+            Shutdown();
+            return;
+        }
+
+        // Closing the window hides it to the tray, so the last window closing is no longer the
+        // end of the process; only an explicit exit is.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        UserSettings settings = UserSettingsStore.Load();
+
         // Applied before the window exists, so it opens in the chosen theme rather than flashing
         // the default one first.
-        ThemeManager.Apply(UserSettingsStore.Load().GetTheme());
+        ThemeManager.Apply(settings.GetTheme());
 
-        new MainWindow().Show();
+#if !DEBUG
+        // Re-applied every launch so the entry follows the executable if it has been moved. Not
+        // in Debug builds, where it would point sign-in at whatever bin folder ran last.
+        LoginStartup.Apply(settings.StartWithWindows);
+#endif
+
+        _tray = new TrayIcon(ShowMainWindow, ExitApplication);
+
+        if (!HasSwitch(e, LoginStartup.TraySwitch))
+        {
+            ShowMainWindow();
+        }
     }
+
+    /// <summary>True once the process has decided to end, so closing the window really closes it.</summary>
+    internal static bool IsExiting { get; private set; }
+
+    /// <summary>Ends the process, as opposed to closing the window, which only hides it.</summary>
+    internal static void ExitApplication()
+    {
+        IsExiting = true;
+        Current.Shutdown();
+    }
+
+    /// <summary>Called by the window when it hides itself instead of closing.</summary>
+    internal static void OnHiddenToTray() => ((App)Current)._tray?.ShowHiddenHint();
+
+    protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
+    {
+        // Sign-out and shutdown must not be held up by a window that thinks it is only hiding.
+        IsExiting = true;
+        base.OnSessionEnding(e);
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _tray?.Dispose();
+        _instance?.Dispose();
+        base.OnExit(e);
+    }
+
+    /// <summary>
+    /// Brings the window back, creating it on first use: a launch at sign-in starts in the tray
+    /// and should not pay for building and polling a window nobody has opened.
+    /// </summary>
+    private void ShowMainWindow()
+    {
+        _window ??= new MainWindow();
+
+        _window.Show();
+        if (_window.WindowState == WindowState.Minimized)
+        {
+            _window.WindowState = WindowState.Normal;
+        }
+
+        _window.Activate();
+    }
+
+    private static bool HasSwitch(StartupEventArgs e, string name) =>
+        e.Args.Any(a => string.Equals(a, name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Headless reconcile. Returns the process exit code.

@@ -27,6 +27,9 @@ public sealed class UserSettings
         Enum.TryParse(Theme, ignoreCase: true, out AppTheme parsed) ? parsed : AppTheme.Light;
 
     public void SetTheme(AppTheme theme) => Theme = theme.ToString();
+
+    /// <summary>On unless turned off: a settings file from before this existed reads as on.</summary>
+    public bool StartWithWindows { get; set; } = true;
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]

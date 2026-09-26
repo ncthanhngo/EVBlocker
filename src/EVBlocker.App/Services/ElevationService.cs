@@ -13,6 +13,12 @@ namespace EVBlocker.App.Services;
 public static class ElevationService
 {
     /// <summary>
+    /// Marks the elevated copy, which starts while this one is still exiting and so has to wait
+    /// for the single-instance claim rather than hand over to the process it is replacing.
+    /// </summary>
+    public const string RelaunchSwitch = "--relaunched";
+
+    /// <summary>
     /// Detection lives in Core, where the privileged work is, so the UI and the operations it
     /// drives can never disagree about whether this process is elevated.
     /// </summary>
@@ -33,6 +39,7 @@ public static class ElevationService
         var startInfo = new ProcessStartInfo
         {
             FileName = executable,
+            Arguments = RelaunchSwitch,
             // "runas" is what raises the UAC prompt, and it requires the shell to start the
             // process, so UseShellExecute cannot be false here.
             Verb = "runas",

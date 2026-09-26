@@ -201,7 +201,7 @@ public sealed class MainViewModel : ObservableObject
     {
         if (ElevationService.TryRelaunchElevated())
         {
-            System.Windows.Application.Current.Shutdown();
+            App.ExitApplication();
         }
     }
 }

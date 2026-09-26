@@ -344,6 +344,16 @@
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <StackPanel>
 
+        <Border Style="{StaticResource Card}" Padding="20,16" Margin="0,0,0,14">
+          <StackPanel>
+            <TextBlock Text="CHẠY NỀN" Style="{StaticResource SectionLabel}" />
+            <CheckBox Content="Tự chạy khi đăng nhập Windows, ẩn ở khay hệ thống" Margin="0,10,0,0"
+                      IsChecked="{Binding StartWithWindows}" />
+            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Style="{StaticResource MutedText}"
+                       Text="Nút đóng cửa sổ chỉ ẩn EVBlocker xuống khay hệ thống, góc phải thanh tác vụ. Muốn tắt hẳn: bấm phải vào biểu tượng ở khay → Thoát EVBlocker. Việc chặn internet do tường lửa Windows thực hiện, không phụ thuộc ứng dụng có đang chạy hay không." />
+          </StackPanel>
+        </Border>
+
         <!-- Moved out of the enforcement strip, where it was a second row on every screen.
              It is a setting - whether the rules repair themselves at boot - not part of the
              decision to block, and it reaches the enforcement view model through the window
