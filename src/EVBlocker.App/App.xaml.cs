@@ -4,6 +4,8 @@ using System.Windows.Threading;
 using EVBlocker.App.Services;
 using EVBlocker.App.Theming;
 using EVBlocker.App.Views;
+using EVBlocker.Core.Firewall;
+using EVBlocker.Core.Safety;
 using EVBlocker.Core.Startup;
 
 namespace EVBlocker.App;
@@ -50,6 +52,12 @@ public partial class App : Application
         if (HasSwitch(e, StartupReconcileTask.ReconcileSwitch))
         {
             Shutdown(RunReconcile());
+            return;
+        }
+
+        if (HasSwitch(e, ScheduledTaskDeadManSwitch.RemoveBootGuardSwitch))
+        {
+            Shutdown(RemoveBootGuard());
             return;
         }
 
@@ -169,6 +177,43 @@ public partial class App : Application
             Append(ReconcileLogPath, $"Unhandled: {ex}");
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Removes the boot guard and returns the exit code. Run by the dead-man revert, and by hand
+    /// as the recovery step when a machine comes up without network.
+    /// </summary>
+    /// <remarks>
+    /// Says what happened in a dialog only when a person ran it. Under SYSTEM, from the revert
+    /// task, a dialog would wait forever on a desktop nobody can see.
+    /// </remarks>
+    private static int RemoveBootGuard()
+    {
+        bool byPerson = !System.Security.Principal.WindowsIdentity.GetCurrent().IsSystem;
+        string message;
+        int exitCode;
+
+        try
+        {
+            new BootGuard().Remove();
+            message = "Đã gỡ khoá lúc khởi động.";
+            exitCode = 0;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException)
+        {
+            message = $"Không gỡ được khoá lúc khởi động: {ex.Message}";
+            exitCode = 1;
+        }
+
+        Append(ReconcileLogPath, $"{ScheduledTaskDeadManSwitch.RemoveBootGuardSwitch}: {message}");
+
+        if (byPerson)
+        {
+            MessageBox.Show(message, "EVBlocker", MessageBoxButton.OK,
+                exitCode == 0 ? MessageBoxImage.Information : MessageBoxImage.Error);
+        }
+
+        return exitCode;
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

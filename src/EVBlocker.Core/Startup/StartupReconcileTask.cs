@@ -6,12 +6,15 @@ namespace EVBlocker.Core.Startup;
 /// The boot-time task that re-applies the policy when something has changed it.
 /// </summary>
 /// <remarks>
-/// This task does not make blocking work. Blocking lives in the firewall configuration and is
-/// applied by MpsSvc, which starts long before any user-mode program; the policy is already in
-/// force by the time anything here could run. What this catches is drift - an installer, Group
-/// Policy, another tool, or a Windows reset removing the rules the policy depends on. With
-/// outbound blocked and the baseline rules gone, a machine has no DNS and no updates, and nothing
-/// would put them back.
+/// Two jobs. The first is drift - an installer, Group Policy, another tool, or a Windows reset
+/// removing the rules the policy depends on. With outbound blocked and the baseline rules gone, a
+/// machine has no DNS and no updates, and nothing would put them back.
+///
+/// The second is releasing the boot guard. The firewall's policy is not persistent: MpsSvc
+/// re-applies it at each boot, and until it has, Windows lets all outbound traffic through. The
+/// guard blocks that window, and this task ends the block once the firewall is ready. While
+/// blocking is on, the machine has no network after a reboot until this task has run - which is
+/// why the application does not let it be turned off while blocking is on.
 ///
 /// Registered as a scheduled task with an at-startup trigger rather than a Run key or the Startup
 /// folder. Those run at logon, after a great deal has already started, and they run as the user -
@@ -68,9 +71,12 @@ public sealed class StartupReconcileTask
     /// Builds the task definition. Pure, so the settings can be asserted in a test.
     /// </summary>
     /// <remarks>
-    /// The delay after boot is deliberate. Running the instant the machine starts would race
-    /// MpsSvc finishing its own work, and a reconcile that reads a half-applied configuration
-    /// would see drift that is not there and rewrite rules for no reason.
+    /// No delay after boot: the run waits for the firewall itself, and every second of delay is
+    /// a second with the boot guard engaged and the machine offline. Normal priority rather than
+    /// Task Scheduler's below-normal default, for the same reason.
+    ///
+    /// The time limit covers the wait for the firewall plus the reconcile; the wait gives up well
+    /// before it and releases the guard anyway.
     /// </remarks>
     internal static string BuildTaskXml(string executablePath)
     {
@@ -86,7 +92,6 @@ public sealed class StartupReconcileTask
               <Triggers>
                 <BootTrigger>
                   <Enabled>true</Enabled>
-                  <Delay>PT30S</Delay>
                 </BootTrigger>
               </Triggers>
               <Principals>
@@ -102,7 +107,8 @@ public sealed class StartupReconcileTask
                 <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
                 <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
                 <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-                <ExecutionTimeLimit>PT5M</ExecutionTimeLimit>
+                <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
+                <Priority>4</Priority>
               </Settings>
               <Actions Context="Author">
                 <Exec>

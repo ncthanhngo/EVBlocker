@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using EVBlocker.Core.Safety;
+using EVBlocker.Core.Startup;
 
 namespace EVBlocker.Core.Tests;
 
@@ -25,13 +26,35 @@ public sealed class DeadManSwitchSchemaIntegrationTests
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
     [Fact]
-    public void GeneratedXml_IsAcceptedByTaskScheduler()
+    public void GeneratedXml_IsAcceptedByTaskScheduler() =>
+        AssertAccepted(ScheduledTaskDeadManSwitch.BuildTaskXml(
+            @"C:\ProgramData\EVBlocker\backups\test.wfw",
+            DateTimeOffset.Now.AddMinutes(30),
+            @"C:\Program Files\EVBlocker\EVBlocker.exe"));
+
+    /// <remarks>
+    /// The boot trigger is swapped for a time trigger: registering a boot trigger needs
+    /// elevation, the same permission question the principal rewrite sidesteps. Everything else -
+    /// settings, priority, actions - is checked as generated.
+    /// </remarks>
+    [Fact]
+    public void StartupTaskXml_IsAcceptedByTaskScheduler()
+    {
+        string xml = StartupReconcileTask.BuildTaskXml(@"C:\Program Files\EVBlocker\EVBlocker.exe");
+        int start = xml.IndexOf("<BootTrigger>", StringComparison.Ordinal);
+        int end = xml.IndexOf("</BootTrigger>", StringComparison.Ordinal) + "</BootTrigger>".Length;
+        string timeTrigger = $"<TimeTrigger><StartBoundary>{DateTime.Now.AddMinutes(30):yyyy-MM-ddTHH:mm:ss}</StartBoundary><Enabled>true</Enabled></TimeTrigger>";
+
+        Assert.True(start >= 0 && end > start, "The startup task should trigger on boot.");
+        AssertAccepted(string.Concat(xml.AsSpan(0, start), timeTrigger, xml.AsSpan(end)));
+    }
+
+    private static void AssertAccepted(string generated)
     {
         string taskName = $"EVBlocker-SchemaCheck-{Guid.NewGuid():N}";
         string xmlFile = Path.Combine(Path.GetTempPath(), $"{taskName}.xml");
 
-        string xml = ScheduledTaskDeadManSwitch
-            .BuildTaskXml(@"C:\ProgramData\EVBlocker\backups\test.wfw", DateTimeOffset.Now.AddMinutes(30))
+        string xml = generated
             .Replace(
                 "<UserId>S-1-5-18</UserId>",
                 $"<UserId>{Environment.UserDomainName}\\{Environment.UserName}</UserId>",

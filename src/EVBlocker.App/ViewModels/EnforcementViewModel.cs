@@ -40,6 +40,9 @@ public sealed class EnforcementViewModel : ObservableObject
 
     private bool _startupInstalled;
 
+    /// <summary>Whether a boot guard exists. Only known when elevated; assumed present otherwise.</summary>
+    private bool _guardPresent = true;
+
     private EnforcementStatus? _status;
     private RevertOption _revertAfter;
     private string _message = string.Empty;
@@ -70,7 +73,11 @@ public sealed class EnforcementViewModel : ObservableObject
         _startupTask = startupTask;
         _confirm = confirm;
         _revertAfter = RevertOptions[1];
-        _toggleStartupCommand = new RelayCommand(ToggleStartupTask, () => ElevationService.IsElevated);
+        // Not removable while blocking: the task is what releases the boot guard, and without it
+        // the machine comes up with no network after the next reboot.
+        _toggleStartupCommand = new RelayCommand(
+            ToggleStartupTask,
+            () => ElevationService.IsElevated && !(_startupInstalled && (State != EnforcementState.Off || _guardPresent)));
 
         _enableCommand = new RelayCommand(Enable, () => State == EnforcementState.Off && ElevationService.IsElevated);
         _confirmCommand = new RelayCommand(ConfirmEnforcement, () => State == EnforcementState.Armed && ElevationService.IsElevated);
@@ -85,6 +92,22 @@ public sealed class EnforcementViewModel : ObservableObject
         };
 
         Refresh();
+
+        if (ElevationService.IsElevated)
+        {
+            // Keeps the copy the startup task runs at this version. Separate from the sync below,
+            // so a copy that fails - another instance running from Program Files - does not stop
+            // the guard being put right.
+            if (_startupInstalled)
+            {
+                Run(() => FixedInstall.Ensure());
+            }
+
+            // Catches up a machine where blocking was turned on before the boot guard existed, or
+            // where the guard went missing. Needs elevation, which is why it happens here and not
+            // in Refresh: an unelevated window cannot read the guard, let alone install it.
+            Run(() => _controller.SyncBootGuard(prepare: true));
+        }
     }
 
     public System.Windows.Input.ICommand EnableCommand => _enableCommand;
@@ -106,9 +129,12 @@ public sealed class EnforcementViewModel : ObservableObject
     /// </remarks>
     public bool StartupTaskInstalled => _startupInstalled;
 
-    public string StartupTaskText => _startupInstalled
-        ? "Tự kiểm tra lại khi mở máy: BẬT"
-        : "Tự kiểm tra lại khi mở máy: TẮT — nếu danh sách bị xoá, ứng dụng sẽ không tự đặt lại";
+    public string StartupTaskText => (_startupInstalled, State != EnforcementState.Off) switch
+    {
+        (true, true) => "Tự kiểm tra lại khi mở máy: BẬT — bắt buộc khi đang chặn, vì nó mở khoá lúc khởi động",
+        (true, false) => "Tự kiểm tra lại khi mở máy: BẬT",
+        _ => "Tự kiểm tra lại khi mở máy: TẮT — nếu danh sách bị xoá, ứng dụng sẽ không tự đặt lại",
+    };
 
     public string StartupToggleLabel => _startupInstalled ? "Tắt tự kiểm tra" : "Bật tự kiểm tra";
 
@@ -225,6 +251,13 @@ public sealed class EnforcementViewModel : ObservableObject
         {
             _status = _controller.GetStatus();
             _startupInstalled = _startupTask.IsInstalled();
+
+            // Tracked apart from the firewall state: a reset or a policy can turn blocking off
+            // and leave the guard behind, and the task is still the only thing that releases it.
+            if (ElevationService.IsElevated)
+            {
+                _guardPresent = _controller.GetBootGuardState() is BootGuardState state && state != BootGuardState.Absent;
+            }
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -283,21 +316,22 @@ public sealed class EnforcementViewModel : ObservableObject
     {
         if (_startupInstalled)
         {
+            // A guard with no task to release it means no network after the next reboot. Sync
+            // first - blocking off removes the guard - and refuse if one is still there.
+            if (_controller.SyncBootGuard(prepare: false) is BootGuardState state && state != BootGuardState.Absent)
+            {
+                Message = "Chưa tắt được: khoá lúc khởi động vẫn còn, và task này là thứ mở nó. Ngừng chặn trước.";
+                return;
+            }
+
             _startupTask.Uninstall();
             Message = "Đã tắt tự kiểm tra khi mở máy.";
             return;
         }
 
-        // Environment.ProcessPath is the running executable, so the task points at whatever copy
-        // the user actually launched rather than at a guessed install location.
-        string? executable = Environment.ProcessPath;
-        if (string.IsNullOrEmpty(executable))
-        {
-            Message = "Không xác định được đường dẫn của chính ứng dụng, chưa đăng ký được.";
-            return;
-        }
-
-        _startupTask.Install(executable);
+        // The fixed copy under Program Files, not wherever this one was launched from: the task
+        // runs as SYSTEM, and a file the user can move or overwrite is the wrong thing to run.
+        _startupTask.Install(FixedInstall.Ensure());
         Message = "Đã bật. Mỗi lần mở máy, danh sách sẽ được kiểm tra và đặt lại nếu bị thay đổi.";
     });
 
@@ -332,6 +366,14 @@ public sealed class EnforcementViewModel : ObservableObject
         catch (InvalidDataException ex)
         {
             Message = ex.Message;
+        }
+#pragma warning disable CA1031 // Everything else the firewall, schtasks or the file system can throw -
+        // COM errors, timeouts, process start failures. Several of these paths run from the
+        // constructor, where an escaping exception means the window never opens.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            Message = $"Lỗi: {ex.Message}";
         }
         finally
         {

@@ -32,17 +32,28 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
 
     public static readonly TimeSpan MaximumDelay = TimeSpan.FromMinutes(60);
 
+    /// <summary>The switch that makes the application remove the boot guard and exit.</summary>
+    public const string RemoveBootGuardSwitch = "--remove-boot-guard";
+
     private readonly IScheduledTaskHost _tasks;
+    private readonly string? _bootGuardRemover;
 
     public ScheduledTaskDeadManSwitch()
         : this(new SchTasksHost())
     {
     }
 
-    public ScheduledTaskDeadManSwitch(IScheduledTaskHost tasks)
+    /// <param name="tasks">Where the task is registered.</param>
+    /// <param name="bootGuardRemover">
+    /// The executable that removes the boot guard, run after the firewall import. Null when there
+    /// is no guard. Importing the backup restores the default action but cannot touch WFP filters,
+    /// and a guard left behind would cut off the next boot until the startup task noticed.
+    /// </param>
+    public ScheduledTaskDeadManSwitch(IScheduledTaskHost tasks, string? bootGuardRemover = null)
     {
         ArgumentNullException.ThrowIfNull(tasks);
         _tasks = tasks;
+        _bootGuardRemover = bootGuardRemover;
     }
 
     public bool IsArmed() => _tasks.Exists(TaskName);
@@ -67,7 +78,7 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
                 "Refusing to arm a revert for a backup that does not exist.", backupPath);
         }
 
-        _tasks.Register(TaskName, BuildTaskXml(backupPath, DateTimeOffset.Now + delay));
+        _tasks.Register(TaskName, BuildTaskXml(backupPath, DateTimeOffset.Now + delay, _bootGuardRemover));
     }
 
     public void Disarm() => _tasks.Remove(TaskName);
@@ -83,11 +94,22 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
     /// whose moment passed while the machine was off is simply skipped, and the revert never
     /// happens.
     /// </remarks>
-    internal static string BuildTaskXml(string backupPath, DateTimeOffset fireAt)
+    internal static string BuildTaskXml(string backupPath, DateTimeOffset fireAt, string? bootGuardRemover = null)
     {
         string netsh = Path.Combine(Environment.SystemDirectory, "netsh.exe");
         string arguments = SecurityElement.Escape($"advfirewall import \"{backupPath}\"") ?? string.Empty;
         string start = fireAt.LocalDateTime.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+
+        // Actions run in order, so the guard goes after the default action is back to Allow.
+        string removeGuard = bootGuardRemover is null
+            ? string.Empty
+            : $"""
+
+                <Exec>
+                  <Command>{SecurityElement.Escape(bootGuardRemover)}</Command>
+                  <Arguments>{RemoveBootGuardSwitch}</Arguments>
+                </Exec>
+            """;
 
         return $"""
             <?xml version="1.0" encoding="UTF-16"?>
@@ -122,7 +144,7 @@ public sealed class ScheduledTaskDeadManSwitch : IDeadManSwitch
                 <Exec>
                   <Command>{SecurityElement.Escape(netsh)}</Command>
                   <Arguments>{arguments}</Arguments>
-                </Exec>
+                </Exec>{removeGuard}
               </Actions>
             </Task>
             """;

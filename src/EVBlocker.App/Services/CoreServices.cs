@@ -21,11 +21,20 @@ internal static class CoreServices
     public static EnforcementController CreateEnforcementController() => new(
         new WindowsFirewallPolicy(),
         new ConfigBackup(ConfigBackup.DefaultDirectory),
-        new ScheduledTaskDeadManSwitch(),
-        new OsBaseline());
+        new ScheduledTaskDeadManSwitch(new SchTasksHost(), FixedInstall.ExecutablePath),
+        new OsBaseline(),
+        new BootGuard(),
+        PrepareBootRelease);
 
     public static PolicyReconciler CreateReconciler() => new(
         CreateEnforcementController(),
         new WindowsFirewallPolicy(),
-        CreateAllowListStore());
+        CreateAllowListStore(),
+        new BootGuard());
+
+    /// <summary>
+    /// Puts in place what releases the boot guard at the next boot: the fixed copy of the
+    /// executable and the startup task pointing at it.
+    /// </summary>
+    public static void PrepareBootRelease() => new StartupReconcileTask().Install(FixedInstall.Ensure());
 }

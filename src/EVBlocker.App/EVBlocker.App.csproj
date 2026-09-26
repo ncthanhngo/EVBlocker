@@ -37,6 +37,10 @@
     <!-- Also embedded as a WPF resource, which is a separate thing from ApplicationIcon:
          Window.Icon resolves through the pack URI scheme and cannot read the exe's own icon. -->
     <Resource Include="Assets\app.ico" />
+
+    <!-- Written beside the fixed copy under Program Files when blocking is turned on, so the way
+         to undo the boot guard is on the machine before anyone needs it. See FixedInstall. -->
+    <EmbeddedResource Include="..\..\tools\remove-boot-guard.ps1" LogicalName="remove-boot-guard.ps1" />
   </ItemGroup>
 
   <ItemGroup>

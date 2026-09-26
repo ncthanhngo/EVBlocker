@@ -86,11 +86,24 @@ public sealed class StartupReconcileTaskTests : IDisposable
     }
 
     [Fact]
-    public void WaitsBeforeRunning()
+    public void StartsWithoutDelay_AtNormalPriority()
     {
-        // Running the instant the machine starts would race MpsSvc finishing its own work, and a
-        // reconcile that reads a half-applied configuration would rewrite rules for no reason.
-        Assert.Equal("PT30S", Value(RegisteredXml(), "Delay"));
+        // The run waits for the firewall itself. A fixed delay on top would only add seconds with
+        // the boot guard engaged and the machine offline, and Task Scheduler's default priority
+        // is below normal.
+        XElement root = RegisteredXml();
+
+        Assert.Null(Value(root, "Delay"));
+        Assert.Equal("4", Value(root, "Priority"));
+    }
+
+    [Fact]
+    public void TimeLimit_OutlastsTheWaitForTheFirewall()
+    {
+        // A task killed mid-wait never releases the guard.
+        TimeSpan limit = System.Xml.XmlConvert.ToTimeSpan(Value(RegisteredXml(), "ExecutionTimeLimit")!);
+
+        Assert.True(limit > PolicyReconciler.FirewallWait + TimeSpan.FromMinutes(2));
     }
 
     [Fact]

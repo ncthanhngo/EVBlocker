@@ -27,6 +27,15 @@ internal sealed class FakeFirewallPolicy : IFirewallPolicy
     /// </summary>
     public FirewallProfile? IgnoreDefaultActionFor { get; set; }
 
+    /// <summary>
+    /// How many reads of the default action fail before one succeeds, standing in for a firewall
+    /// service that is still starting.
+    /// </summary>
+    public int FailingDefaultReads { get; set; }
+
+    /// <summary>Thrown from every rule read, standing in for an error nobody planned for.</summary>
+    public Exception? RuleReadFailure { get; set; }
+
     public int WriteCount => Calls.Count(c => c.StartsWith("Add:", StringComparison.Ordinal)
                                               || c.StartsWith("Remove:", StringComparison.Ordinal));
 
@@ -41,6 +50,11 @@ internal sealed class FakeFirewallPolicy : IFirewallPolicy
     public IReadOnlyList<FirewallRuleSpec> GetRulesInGroup(string group)
     {
         Calls.Add($"Get:{group}");
+
+        if (RuleReadFailure is not null)
+        {
+            throw RuleReadFailure;
+        }
 
         return _rules.Values
             .Where(r => string.Equals(r.Group, group, StringComparison.Ordinal))
@@ -59,8 +73,24 @@ internal sealed class FakeFirewallPolicy : IFirewallPolicy
         _rules.Remove(name);
     }
 
-    public IReadOnlyDictionary<FirewallProfile, FirewallAction> GetDefaultOutboundActions() =>
-        new Dictionary<FirewallProfile, FirewallAction>(_defaults);
+    public IReadOnlyDictionary<FirewallProfile, FirewallAction> GetDefaultOutboundActions()
+    {
+        if (FailingDefaultReads > 0)
+        {
+            FailingDefaultReads--;
+            throw new InvalidOperationException("The firewall service is not running.");
+        }
+
+        return new Dictionary<FirewallProfile, FirewallAction>(_defaults);
+    }
+
+    public void BlockAll()
+    {
+        foreach (FirewallProfile profile in Enum.GetValues<FirewallProfile>())
+        {
+            _defaults[profile] = FirewallAction.Block;
+        }
+    }
 
     public void SetDefaultOutboundAction(FirewallProfile profile, FirewallAction action)
     {
@@ -138,5 +168,54 @@ internal sealed class FakeDeadManSwitch : IDeadManSwitch
         Calls.Add("Disarm");
         ArmedBackupPath = null;
         ArmedDelay = null;
+    }
+}
+
+/// <summary>
+/// In-memory boot guard. Records into a shared call list, so its calls can be ordered against the
+/// firewall's.
+/// </summary>
+internal sealed class FakeBootGuard : IBootGuard
+{
+    private readonly List<string> _calls;
+
+    public FakeBootGuard(List<string> calls) => _calls = calls;
+
+    public BootGuardState State { get; set; } = BootGuardState.Absent;
+
+    public Exception? InstallFailure { get; set; }
+
+    public Exception? GetStateFailure { get; set; }
+
+    public BootGuardState GetState() => GetStateFailure is null ? State : throw GetStateFailure;
+
+    public void Install()
+    {
+        _calls.Add("Guard:Install");
+
+        if (InstallFailure is not null)
+        {
+            throw InstallFailure;
+        }
+
+        State = BootGuardState.Released;
+    }
+
+    public void Release()
+    {
+        _calls.Add("Guard:Release");
+        State = BootGuardState.Released;
+    }
+
+    public void Engage()
+    {
+        _calls.Add("Guard:Engage");
+        State = BootGuardState.Engaged;
+    }
+
+    public void Remove()
+    {
+        _calls.Add("Guard:Remove");
+        State = BootGuardState.Absent;
     }
 }

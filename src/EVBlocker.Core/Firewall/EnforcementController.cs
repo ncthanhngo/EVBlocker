@@ -45,6 +45,11 @@ public sealed record EnforcementStatus
 /// Enable does the destructive step last, on purpose: the backup is taken, the rules are written
 /// and the automatic revert is armed before anything is blocked. If the process dies at any point
 /// after arming, the revert still fires; if it dies before, nothing has been blocked yet.
+///
+/// With a boot guard, blocking also covers the seconds between the network stack loading and the
+/// firewall applying the policy at each boot. The guard only ever exists while blocking does: it
+/// is installed as part of Enable, removed by Disable, and <see cref="SyncBootGuard"/> repairs
+/// either direction when something else changed the default action.
 /// </remarks>
 public sealed class EnforcementController
 {
@@ -52,12 +57,22 @@ public sealed class EnforcementController
     private readonly IConfigBackup _backup;
     private readonly IDeadManSwitch _deadMan;
     private readonly OsBaseline _baseline;
+    private readonly IBootGuard? _bootGuard;
+    private readonly Action? _prepareBootRelease;
 
+    /// <param name="bootGuard">Null for no boot guard.</param>
+    /// <param name="prepareBootRelease">
+    /// Makes sure something will release the guard at the next boot - in the application, a fixed
+    /// copy of the executable and the startup task pointing at it. Runs before the guard is
+    /// installed, because a guard nothing releases leaves the machine offline after a reboot.
+    /// </param>
     public EnforcementController(
         IFirewallPolicy policy,
         IConfigBackup backup,
         IDeadManSwitch deadMan,
-        OsBaseline baseline)
+        OsBaseline baseline,
+        IBootGuard? bootGuard = null,
+        Action? prepareBootRelease = null)
     {
         ArgumentNullException.ThrowIfNull(policy);
         ArgumentNullException.ThrowIfNull(backup);
@@ -68,6 +83,8 @@ public sealed class EnforcementController
         _backup = backup;
         _deadMan = deadMan;
         _baseline = baseline;
+        _bootGuard = bootGuard;
+        _prepareBootRelease = prepareBootRelease;
     }
 
     public EnforcementStatus GetStatus()
@@ -153,6 +170,10 @@ public sealed class EnforcementController
         // reachable; after them it may not be, and by then the way back already exists.
         _deadMan.Arm(backup.Path, revertAfter);
 
+        // Installed released, so nothing changes until the next boot. Before the default action,
+        // so a failure here stops Enable with nothing blocked and the revert already armed.
+        InstallBootGuard(prepare: true);
+
         foreach (FirewallProfile profile in Enum.GetValues<FirewallProfile>())
         {
             _policy.SetDefaultOutboundAction(profile, FirewallAction.Block);
@@ -218,11 +239,79 @@ public sealed class EnforcementController
             _policy.SetDefaultOutboundAction(profile, FirewallAction.Allow);
         }
 
+        // After the default action, so the network is already open if this fails. A guard left
+        // behind would cut the next boot off until the startup task removed it.
+        _bootGuard?.Remove();
+
         if (_deadMan.IsArmed())
         {
             _deadMan.Disarm();
         }
 
         return GetStatus();
+    }
+
+    /// <summary>
+    /// Brings the boot guard in line with the default outbound action: installed and released
+    /// while any profile blocks, absent otherwise.
+    /// </summary>
+    /// <param name="prepare">
+    /// Whether to run the boot-release preparation before installing. The startup task passes
+    /// false: it is the thing the preparation sets up, and re-registering itself while running is
+    /// not something it should do.
+    /// </param>
+    /// <returns>The guard's state afterwards, or null when there is no guard.</returns>
+    /// <remarks>
+    /// Needed beyond Enable and Disable because the default action can change without either: a
+    /// dead-man revert, a firewall reset, a machine where blocking was turned on before the guard
+    /// existed. Releasing an engaged guard is part of it - at boot this is what ends the block.
+    /// </remarks>
+    /// <summary>The guard's state, or null when there is no guard. Needs elevation.</summary>
+    public BootGuardState? GetBootGuardState() => _bootGuard?.GetState();
+
+    public BootGuardState? SyncBootGuard(bool prepare)
+    {
+        if (_bootGuard is null)
+        {
+            return null;
+        }
+
+        bool blocking = _policy.GetDefaultOutboundActions().Values.Any(a => a == FirewallAction.Block);
+
+        if (blocking)
+        {
+            InstallBootGuard(prepare);
+        }
+        else if (_bootGuard.GetState() != BootGuardState.Absent)
+        {
+            _bootGuard.Remove();
+        }
+
+        return _bootGuard.GetState();
+    }
+
+    private void InstallBootGuard(bool prepare)
+    {
+        if (_bootGuard is null)
+        {
+            return;
+        }
+
+        // Before the released check, not after: a released guard whose startup task has been
+        // deleted is exactly the case that leaves the next boot offline. The preparation is
+        // idempotent, so running it when nothing is missing costs a task registration.
+        if (prepare)
+        {
+            _prepareBootRelease?.Invoke();
+        }
+
+        if (_bootGuard.GetState() == BootGuardState.Released)
+        {
+            return;
+        }
+
+        // Install adds whatever is missing, the release included, so it also releases an engaged
+        // guard and completes a partial one.
+        _bootGuard.Install();
     }
 }
