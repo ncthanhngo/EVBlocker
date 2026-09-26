@@ -260,6 +260,57 @@
     </Setter>
   </Style>
 
+  <!--
+    A ContextMenu set on an element is that element's logical child, so it inherits the owner's
+    Foreground and FontWeight. On a PrimaryButton that is white semibold text, drawn on the
+    system's white menu background - an unreadable blank menu. Setting all three here stops
+    the inheritance and keeps the menu on the palette in both themes.
+
+    The templates replace the system ones because those paint a fixed light icon gutter down the
+    left edge, which shows as a white strip in the dark theme. The app's menus carry no icons,
+    checks or submenus, so the items are plain rows.
+  -->
+  <Style TargetType="ContextMenu">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContextMenu">
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                  CornerRadius="{StaticResource ControlRadius}" Padding="4">
+            <ItemsPresenter />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Resources>
+      <Style TargetType="MenuItem">
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="MenuItem">
+              <Border x:Name="Bd" Background="Transparent" Padding="12,7"
+                      CornerRadius="{StaticResource ControlRadius}">
+                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                  <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+    </Style.Resources>
+  </Style>
+
   <!-- ============================== inputs ============================== -->
 
   <Style TargetType="TextBox">
