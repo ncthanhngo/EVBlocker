@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- TargetFramework, Nullable, analyzers: see Directory.Build.props at the repo root. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>EVBlocker.Verify</AssemblyName>
+    <RootNamespace>EVBlocker.Verify</RootNamespace>
+
+    <!-- Shares the COM interop that Core brings in, which the trim analyser cannot reason about;
+         this tool is never published trimmed. -->
+    <IsTrimmable>false</IsTrimmable>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EVBlocker.Core\EVBlocker.Core.csproj" />
+  </ItemGroup>
+
+</Project>
