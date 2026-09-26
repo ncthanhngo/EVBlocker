@@ -8,6 +8,7 @@ using EVBlocker.Core.Installed;
 using EVBlocker.Core.Monitor;
 using EVBlocker.Core.Policy;
 using EVBlocker.Core.Startup;
+using EVBlocker.Core.Usb;
 
 namespace EVBlocker.App.ViewModels;
 
@@ -40,6 +41,12 @@ public sealed class MainViewModel : ObservableObject
 
         Monitor = new MonitorViewModel(ActiveConnections, History);
 
+        Usb = new UsbViewModel(
+            new RemovableDriveProbe(),
+            new UsbScanner(),
+            () => new UsbQuarantine(),
+            Confirm);
+
         Enforcement = new EnforcementViewModel(
             CoreServices.CreateEnforcementController(),
             store,
@@ -54,6 +61,7 @@ public sealed class MainViewModel : ObservableObject
         {
             new("Phần mềm được phép", "#2BD673", AllowList),
             new("Theo dõi", "#5AA9FF", Monitor),
+            new("USB", "#F5B93B", Usb),
         };
 
         // Its own list, pinned to the foot of the rail. Settings is not a peer of the two above
@@ -99,6 +107,8 @@ public sealed class MainViewModel : ObservableObject
     public AllowListViewModel AllowList { get; }
 
     public MonitorViewModel Monitor { get; }
+
+    public UsbViewModel Usb { get; }
 
     public EnforcementViewModel Enforcement { get; }
 

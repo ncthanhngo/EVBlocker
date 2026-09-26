@@ -23,9 +23,51 @@ public partial class MainWindow : Window
 
         // Polling starts once the window is up and stops with it: a timer left running against
         // a closed window keeps scanning for nothing.
-        Loaded += (_, _) => _viewModel.ActiveConnections.Start();
+        Loaded += (_, _) =>
+        {
+            _viewModel.ActiveConnections.Start();
+            HookDeviceNotifications();
+        };
+
         Closed += (_, _) => _viewModel.ActiveConnections.Stop();
         StateChanged += (_, _) => ApplyStateMargins();
+    }
+
+    /// <summary>Windows announces a drive arriving or leaving through this message.</summary>
+    private const int WmDeviceChange = 0x0219;
+
+    /// <summary>DBT_DEVICEARRIVAL and DBT_DEVICEREMOVECOMPLETE.</summary>
+    private const int DeviceArrival = 0x8000;
+
+    private const int DeviceRemoved = 0x8004;
+
+    /// <summary>
+    /// Listens for drives appearing so a USB scan needs no button.
+    /// </summary>
+    /// <remarks>
+    /// A window message rather than a timer: polling for drives means either a delay before
+    /// anyone notices the drive or a query every second forever, and the message arrives the
+    /// moment Windows mounts the volume. The hook needs a window handle, which is why it waits
+    /// for Loaded rather than running in the constructor.
+    /// </remarks>
+    private void HookDeviceNotifications()
+    {
+        if (PresentationSource.FromVisual(this) is System.Windows.Interop.HwndSource source)
+        {
+            source.AddHook(OnWindowMessage);
+        }
+    }
+
+    private nint OnWindowMessage(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
+    {
+        if (msg == WmDeviceChange && (wParam == DeviceArrival || wParam == DeviceRemoved))
+        {
+            // Not marked handled: this is a notification others may also want, and swallowing a
+            // broadcast from a window hook is a good way to break something unrelated.
+            _viewModel.Usb.OnDrivesChanged();
+        }
+
+        return 0;
     }
 
     private void ApplyStateMargins()

@@ -282,6 +282,64 @@
       </DockPanel>
     </DataTemplate>
 
+    <!-- ===================== section: usb =====================
+         Scanning runs by itself when a drive appears; cleaning waits to be asked. Moving files
+         off someone else's drive is not a thing to do quietly. -->
+    <DataTemplate DataType="{x:Type vm:UsbViewModel}">
+      <DockPanel>
+
+        <TextBlock DockPanel.Dock="Top" Margin="0,0,0,14" TextWrapping="Wrap"
+                   Style="{StaticResource MutedText}"
+                   Text="Tự quét mỗi khi cắm ổ USB. Tìm loại virus ẩn thư mục rồi để lại shortcut trùng tên — bấm vào shortcut là máy nhiễm. File nghi ngờ được chuyển vào khu cách ly chứ không bị xoá, lấy lại được." />
+
+        <Grid DockPanel.Dock="Bottom" Margin="4,10,0,0">
+          <TextBlock Style="{StaticResource MutedText}" Text="{Binding Status}"
+                     TextWrapping="Wrap" Margin="0,0,300,0" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Quét lại" Command="{Binding ScanCommand}" />
+            <Button Content="Dọn ổ USB" Margin="10,0,0,0"
+                    Style="{StaticResource PrimaryButton}" Command="{Binding CleanCommand}"
+                    ToolTip="Cách ly file nghi là virus và cho hiện lại thư mục bị ẩn" />
+          </StackPanel>
+        </Grid>
+
+        <Border Style="{StaticResource Card}" Padding="4,0,4,4">
+          <DataGrid ItemsSource="{Binding Rows}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="MỨC" Binding="{Binding Level}" Width="150">
+                <DataGridTextColumn.ElementStyle>
+                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding Level}" Value="Chắc chắn là virus">
+                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                        <Setter Property="FontWeight" Value="SemiBold" />
+                      </DataTrigger>
+                      <DataTrigger Binding="{Binding Level}" Value="Đáng ngờ">
+                        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </DataGridTextColumn.ElementStyle>
+              </DataGridTextColumn>
+
+              <DataGridTextColumn Header="TÊN" Binding="{Binding Name}" Width="190" />
+              <DataGridTextColumn Header="SẼ LÀM GÌ" Binding="{Binding Action}" Width="180" />
+
+              <DataGridTextColumn Header="VÌ SAO" Binding="{Binding Reason}" Width="*">
+                <DataGridTextColumn.ElementStyle>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                    <Setter Property="ToolTip" Value="{Binding Path}" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                  </Style>
+                </DataGridTextColumn.ElementStyle>
+              </DataGridTextColumn>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Border>
+      </DockPanel>
+    </DataTemplate>
+
     <!-- ===================== section: settings ===================== -->
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <StackPanel>

@@ -183,6 +183,39 @@ Nó **chỉ sửa rule**, không bao giờ tự bật lại việc chặn. Ứng
 nên một profile đang không chặn thì không phân biệt được với profile bạn chủ động tắt — và đoán
 mò điều đó lúc khởi động không phải việc của nó.
 
+## Quét USB
+
+Mục **USB** tự quét mỗi khi bạn cắm ổ — không cần bấm gì, không cần quyền quản trị để quét.
+
+Nó tìm họ virus lây qua USB kiểu shortcut: virus đặt thư mục của bạn thành ẩn, rồi để lại một
+shortcut **trùng tên** thư mục đó. Bấm vào shortcut thì payload chạy trước, sau đó mới mở thư mục
+thật — nên nhìn bề ngoài mọi thứ vẫn bình thường.
+
+| Mức | Nghĩa là gì | Bấm "Dọn ổ USB" sẽ làm gì |
+|---|---|---|
+| Chắc chắn là virus | Shortcut trùng tên thư mục đang bị ẩn, hoặc shortcut chạy `cmd`/`wscript` kèm tham số | Chuyển vào khu cách ly |
+| Đáng ngờ | File chạy được nhưng bị đặt ẩn, hoặc có `autorun.inf` | Chuyển vào khu cách ly |
+| Chỉ bị ẩn | Thư mục bị đặt ẩn — thường là thư mục của chính bạn | Cho hiện lại, **không** động vào |
+
+**File bị cách ly không bị xoá.** Chúng được *chuyển* sang
+`%ProgramData%\EVBlocker\quarantine\<thời điểm>\` kèm file `manifest.json` ghi đường dẫn gốc và
+lý do, nên lấy lại được nếu nhận nhầm. Các quy tắc ở đây là suy đoán, và một lần nhầm mà xoá
+thẳng là mất dữ liệu không lấy lại được.
+
+Phần "cho hiện lại thư mục" chính là việc file `a.bat` vẫn làm bằng tay, nhưng tự động và không
+phải tự nhận ra thư mục nào là của mình — `System Volume Information`, `$RECYCLE.BIN`, `RECYCLER`,
+`EFI` và các thư mục macOS để lại đều được bỏ qua, nếu không thì ổ nào cũng bị báo nhiễm.
+
+**Đây không phải phần mềm diệt virus.** Nó xử lý phần nằm trên USB. Nếu payload đã chạy trên máy
+rồi thì việc dọn máy là của Windows Defender hoặc công cụ chuyên dụng — ứng dụng này không quét
+bộ nhớ, không đọc registry, không gỡ thứ đã cài vào máy. Phần chặn mạng giúp nửa còn lại: họ worm
+này đều gọi về máy chủ điều khiển, nên khi đang chặn thì payload có chạy cũng không ra được
+internet.
+
+Lưu ý: ổ cứng ngoài cắm qua USB thường được Windows báo là *ổ cứng* chứ không phải *ổ tháo rời*,
+nên ứng dụng hỏi thẳng driver xem ổ nằm trên bus nào. Nhờ vậy ổ cứng USB — loại hay mang virus
+nhất — không bị bỏ sót.
+
 ## Vị trí file
 
 | Đường dẫn | Nội dung |
@@ -192,6 +225,7 @@ mò điều đó lúc khởi động không phải việc của nó.
 | `%ProgramData%\EVBlocker\known-apps.json` | Ghi đè danh mục phần mềm quen thuộc, nếu bạn tạo |
 | `%ProgramData%\EVBlocker\backups\*.wfw` | Bản sao lưu firewall, giữ 10 bản mới nhất |
 | `%ProgramData%\EVBlocker\reconcile.log` | Nhật ký của lần chạy lúc khởi động |
+| `%ProgramData%\EVBlocker\quarantine\` | File cách ly từ USB, kèm manifest ghi nơi lấy ra |
 | `%LOCALAPPDATA%\EVBlocker\settings.json` | Giao diện sáng/tối (riêng từng người dùng) |
 | `%LOCALAPPDATA%\EVBlocker\crash.log` | Lỗi không xử lý được |
 
