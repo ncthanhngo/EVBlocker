@@ -340,9 +340,34 @@ public sealed class AllowListViewModel : ObservableObject
             return;
         }
 
-        var added = new List<string>();
+        int added = AddApps(picked);
 
-        foreach (ScannedSelection app in picked)
+        Status = added == 0
+            ? "Những ứng dụng đã chọn đều có sẵn trong danh sách."
+            : $"Đã thêm {added} ứng dụng từ kết quả quét. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+    }
+
+    /// <summary>
+    /// Adds a set of executables, skipping ones already present and asking before any that can
+    /// run arbitrary code. Returns how many were added.
+    /// </summary>
+    /// <remarks>
+    /// Public because more than one view ends here: the running-app scan and the installed-program
+    /// list make the same decision, and a second copy of these checks is a second place for the
+    /// confirmation prompt to go missing.
+    /// </remarks>
+    public int AddApps(IReadOnlyList<ScannedSelection> apps)
+    {
+        ArgumentNullException.ThrowIfNull(apps);
+
+        if (_loadFailed)
+        {
+            return 0;
+        }
+
+        int added = 0;
+
+        foreach (ScannedSelection app in apps)
         {
             if (_document.Apps.Any(a =>
                     string.Equals(a.ExecutablePath, app.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
@@ -350,30 +375,35 @@ public sealed class AllowListViewModel : ObservableObject
                 continue;
             }
 
-            if (Interpreters.Contains(app.Name)
+            // Keyed on the file name rather than the display name: an installed-program row is
+            // called "Node.js", and only the file behind it says node.exe.
+            string fileName = System.IO.Path.GetFileName(app.ExecutablePath);
+
+            if (Interpreters.Contains(fileName)
                 && !_confirm(
                     "Cho phép công cụ này?",
-                    $"{app.Name} có thể chạy mã tuỳ ý. Cho phép nó ra internet nghĩa là cho phép "
+                    $"{fileName} có thể chạy mã tuỳ ý. Cho phép nó ra internet nghĩa là cho phép "
                     + "mọi script chạy qua nó ra internet.\n\nVẫn thêm?"))
             {
                 continue;
             }
 
             AddEntry(app.ExecutablePath, app.Name);
-
-            added.Add(app.Name);
+            added++;
         }
 
-        if (added.Count == 0)
+        if (added > 0)
         {
-            Status = "Những ứng dụng đã chọn đều có sẵn trong danh sách.";
-            return;
+            _store.Save(_document);
+            Refresh();
         }
 
-        _store.Save(_document);
-        Refresh();
-        Status = $"Đã thêm {added.Count} ứng dụng từ kết quả quét. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+        return added;
     }
+
+    /// <summary>The executables currently allowed, for a view that shows what is already decided.</summary>
+    public IReadOnlySet<string> AllowedPaths() =>
+        _document.Apps.Select(app => app.ExecutablePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private void AddCommonApps()
     {

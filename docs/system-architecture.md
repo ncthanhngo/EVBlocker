@@ -8,6 +8,7 @@ Dành cho người bảo trì. Hướng dẫn cho người dùng ở [huong-dan-
 src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test được
   Monitor/    quét socket đang mở (P/Invoke iphlpapi), liệt kê ứng dụng đang chạy
   History/    đọc event WFP 5157/5156, map path kernel sang ổ đĩa
+  Installed/  đọc danh sách phần mềm đã cài từ registry gỡ cài đặt
   Audit/      bật/đọc audit policy qua auditpol
   Firewall/   COM INetFwPolicy2 + state machine enforcement
   Policy/     allow-list store, reconcile rule, danh mục ứng dụng phổ biến + dò đường dẫn
@@ -19,10 +20,10 @@ src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test đ�
 src/EVBlocker.App/      WPF — chỉ gọi Core qua interface
 tools/EVBlocker.Verify/ kiểm chứng các thao tác cần quyền admin
 tools/capture-ui.ps1    chụp ảnh cửa sổ để kiểm giao diện sau khi sửa XAML
-tests/                  279 test, không cần admin
+tests/                  318 test, không cần admin
 ```
 
-Mọi thành phần chạm Windows API đều nằm sau interface. Đó là lý do 279 test chạy được mà không
+Mọi thành phần chạm Windows API đều nằm sau interface. Đó là lý do 318 test chạy được mà không
 cần quyền admin, và cũng là ranh giới quyết định cái gì test được, cái gì không.
 
 ## Bốn cách nói chuyện với Windows, và vì sao
@@ -115,6 +116,35 @@ nguyên màu cũ sau khi đổi** và trông như lỗi render.
 Dictionary mới được thêm **trước khi** xoá cái cũ. Xoá trước sẽ có một frame không còn palette
 nào, lúc đó mọi `DynamicResource` giải về rỗng và cửa sổ vẽ trắng.
 
+## Phần mềm đã cài
+
+Đọc ba nhánh registry gỡ cài đặt (HKLM 64-bit, HKLM 32-bit, HKCU) và áp đúng bốn điều kiện mà
+Programs and Features dùng. Tái hiện đúng bộ lọc là cần thiết: đọc thô cho **168 key**, lọc xong
+còn **35** — số Control Panel hiển thị.
+
+Khoảng trống không đóng được: một mục gỡ cài đặt mô tả **phần mềm**, còn rule firewall scope theo
+**file thực thi**. Đo trên máy thật: 16/35 xác định được file.
+
+Hai bước quyết định chất lượng, và cả hai đều tìm ra bằng cách chạy thật rồi đọc kết quả:
+
+**Loại file cài đặt.** `DisplayIcon` trỏ vào installer nhiều hơn tưởng — `OneDriveSetup.exe`,
+`python-3.14.6-amd64.exe`, `VC_redist.x64.exe`. Bản đầu tiên resolve được 25/35 nhưng **11 trong
+đó là file cài**; cho phép chúng sinh rule cho thứ chạy một lần rồi không bao giờ mở socket. Điều
+kiện `\Package Cache\` không phải phỏng đoán: Windows Installer giữ gói gốc ở đó để sửa và gỡ.
+Các điều kiện theo tên là heuristic, cố ý ngắn, và có test ghi lại một false positive được chấp
+nhận có chủ ý (tên bắt đầu bằng `setup`).
+
+**Ưu tiên file trùng tên.** Liệt kê thư mục trả lời "ở đây có gì", không trả lời "phần mềm này là
+gì". OneDrive để mười binary cạnh installer và `OneDrive.exe` ở thư mục trên — lấy nguyên danh
+sách sẽ cho phép mười file phụ trợ và **bỏ sót đúng tiến trình đồng bộ**. So sánh sau khi bỏ hết
+ký tự không phải chữ và số, nên "Microsoft OneDrive" khớp `OneDrive.exe` mà không khớp
+`OneDriveStandaloneUpdater.exe`.
+
+Git vẫn không giải được bằng cách này: mục của nó chỉ ra launcher ở thư mục gốc, còn
+`git-remote-https.exe` nằm sâu ba cấp. Danh mục mặc định mới là nơi xử lý Git.
+
+Phần đọc registry tách khỏi phần quyết định, nên toàn bộ luật kiểm thử được mà không cần registry.
+
 ## Icon ứng dụng
 
 Hỏi shell (`SHGetFileInfo`) chứ không đọc icon thẳng từ file. Rất nhiều exe phụ trợ không mang
@@ -133,7 +163,7 @@ hoá kèm recycling nên converter chạy lại cho mọi dòng cuộn vào tầ
 ## Build và kiểm chứng
 
 ```powershell
-dotnet test                                                              # 279 test, không cần admin
+dotnet test                                                              # 318 test, không cần admin
 dotnet publish src/EVBlocker.App -p:PublishProfile=SelfContained         # 1 file, ~63 MB
 
 # Cần admin: kiểm các thao tác ghi mà unit test không chạm tới được

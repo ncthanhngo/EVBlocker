@@ -3,6 +3,7 @@ using EVBlocker.App.Mvvm;
 using EVBlocker.App.Services;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.History;
+using EVBlocker.Core.Installed;
 using EVBlocker.Core.Monitor;
 using EVBlocker.Core.Policy;
 using EVBlocker.Core.Startup;
@@ -33,6 +34,13 @@ public sealed class MainViewModel : ObservableObject
             PickRunningApps,
             Confirm);
 
+        // Reads what the allow-list holds now rather than a copy taken at startup: the user can
+        // add something on the Allow-list tab and come straight back here.
+        InstalledPrograms = new InstalledProgramsViewModel(
+            new InstalledProgramScanner(),
+            () => AllowList.AllowedPaths(),
+            apps => AllowList.AddApps(apps));
+
         Enforcement = new EnforcementViewModel(
             CoreServices.CreateEnforcementController(),
             store,
@@ -46,6 +54,7 @@ public sealed class MainViewModel : ObservableObject
             new("Đang kết nối", "#5AA9FF", ActiveConnections),
             new("Đã thử kết nối", "#F5B93B", History),
             new("Allow-list", "#2BD673", AllowList),
+            new("Phần mềm đã cài", "#B48CFF", InstalledPrograms),
             new("Cài đặt", "#94A3B8", Settings),
         };
 
@@ -66,6 +75,8 @@ public sealed class MainViewModel : ObservableObject
     public HistoryViewModel History { get; }
 
     public AllowListViewModel AllowList { get; }
+
+    public InstalledProgramsViewModel InstalledPrograms { get; }
 
     public EnforcementViewModel Enforcement { get; }
 

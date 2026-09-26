@@ -223,6 +223,115 @@
       </DockPanel>
     </DataTemplate>
 
+    <!-- ===================== section: installed programs =====================
+         The same list Control Panel shows, read from the same registry keys, so software
+         installed since the app started is simply there the next time this is opened. -->
+    <DataTemplate DataType="{x:Type vm:InstalledProgramsViewModel}">
+      <DockPanel>
+
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="260" />
+          </Grid.ColumnDefinitions>
+
+          <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+            <CheckBox Content="Ẩn driver và runtime" IsChecked="{Binding HideSupportComponents}"
+                      ToolTip="Ẩn các mục như redistributable, driver, SDK — chúng không tự kết nối internet" />
+            <CheckBox Content="Chỉ hiện mục chưa quyết định" Margin="20,0,0,0"
+                      IsChecked="{Binding UndecidedOnly}"
+                      ToolTip="Phần mềm mới cài sẽ nằm ở đây" />
+          </StackPanel>
+
+          <Grid Grid.Column="2">
+            <TextBox x:Name="ProgramSearch"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}" />
+            <TextBlock Text="Tìm theo tên hoặc đường dẫn…" IsHitTestVisible="False"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextMutedBrush}" FontSize="12.5">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding Text, ElementName=ProgramSearch}" Value="">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </Grid>
+        </Grid>
+
+        <Grid DockPanel.Dock="Bottom" Margin="4,10,0,0">
+          <TextBlock Style="{StaticResource MutedText}" Text="{Binding Status}"
+                     TextWrapping="Wrap" Margin="0,0,320,0" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Đọc lại" Command="{Binding RefreshCommand}" />
+            <Button Content="Cho phép mục đã tích" Margin="10,0,0,0"
+                    Style="{StaticResource PrimaryButton}" Command="{Binding AllowCommand}"
+                    ToolTip="Thêm file thực thi của những mục đã tích vào allow-list" />
+          </StackPanel>
+        </Grid>
+
+        <Border Style="{StaticResource Card}" Padding="4,0,4,4">
+          <DataGrid ItemsSource="{Binding Rows}">
+            <DataGrid.Columns>
+              <DataGridTemplateColumn Width="44">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                              IsEnabled="{Binding CanSelect}" HorizontalAlignment="Center" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+
+              <DataGridTemplateColumn Header="PHẦN MỀM" Width="240">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" ToolTip="{Binding PathTooltip}">
+                      <Image Style="{StaticResource AppIconImage}"
+                             Source="{Binding FirstExecutable, Converter={StaticResource AppIcon}}" />
+                      <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+
+              <DataGridTextColumn Header="NHÀ PHÁT HÀNH" Binding="{Binding Publisher}" Width="150">
+                <DataGridTextColumn.ElementStyle>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                  </Style>
+                </DataGridTextColumn.ElementStyle>
+              </DataGridTextColumn>
+
+              <DataGridTextColumn Header="PHIÊN BẢN" Binding="{Binding Version}" Width="110" />
+              <DataGridTextColumn Header="CÀI LÚC" Binding="{Binding InstalledOn}" Width="100" />
+
+              <DataGridTextColumn Header="TÌNH TRẠNG" Binding="{Binding Status}" Width="*">
+                <DataGridTextColumn.ElementStyle>
+                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding Status}" Value="Đã cho phép">
+                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                      </DataTrigger>
+                      <DataTrigger Binding="{Binding IsResolved}" Value="False">
+                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </DataGridTextColumn.ElementStyle>
+              </DataGridTextColumn>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Border>
+      </DockPanel>
+    </DataTemplate>
+
     <!-- ===================== section: settings ===================== -->
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <StackPanel>

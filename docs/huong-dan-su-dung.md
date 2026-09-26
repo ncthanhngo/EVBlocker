@@ -69,6 +69,31 @@ như đúng trong khi không cho phép gì cả.
 Gỡ một ứng dụng khỏi danh sách là **quyết định vĩnh viễn**: nó được ghi lại trong `allowlist.json`
 nên lần mở sau không bị thêm lại. Muốn lấy lại thì bấm **Thêm ứng dụng phổ biến**.
 
+### Tab "Phần mềm đã cài"
+
+Liệt kê đúng những gì Control Panel → Programs hiển thị, đọc từ cùng ba nhánh registry, nên phần
+mềm vừa cài xong đã có mặt ngay lần mở kế tiếp — không có gì phải làm mới hay đồng bộ.
+
+Tích phần mềm nào thì file thực thi của nó vào allow-list. Bộ lọc **Chỉ hiện mục chưa quyết định**
+là chỗ phần mềm mới cài rơi vào. **Ẩn driver và runtime** bật sẵn vì các mục kiểu redistributable,
+driver, SDK chiếm phần lớn danh sách và không tự kết nối internet; số mục đang ẩn luôn hiện ở
+thanh dưới. Thành phần của Windows không cần quyết định gì — baseline đã lo theo tên service.
+
+**Một mục gỡ cài đặt mô tả *phần mềm*, còn firewall cần *file .exe*, và registry không phải lúc
+nào cũng bắc được cầu đó.** Đo trên một máy thật: 35 phần mềm, 16 xác định được file, 19 không.
+Dòng không xác định được vẫn hiện nhưng không tích được — thêm bằng **Thêm ứng dụng…**.
+
+Hai chỗ dễ sai đã được xử lý, nhưng nên biết:
+
+- `DisplayIcon` rất hay trỏ vào **file cài đặt** chứ không phải phần mềm — đo được
+  `OneDriveSetup.exe` cho OneDrive và `python-3.14.6-amd64.exe` trong Package Cache cho Python.
+  Cho phép những file đó tạo rule cho thứ chạy một lần rồi thôi. Ứng dụng loại chúng ra.
+- Thư mục cài đặt thường chứa nhiều file. Ứng dụng ưu tiên file **trùng tên phần mềm**, nên
+  "Microsoft OneDrive" ra đúng `OneDrive.exe` thay vì mười file phụ trợ bên cạnh.
+
+Git vẫn là ngoại lệ: mục Git ở đây chỉ ra các launcher trong thư mục gốc, không ra
+`git-remote-https.exe`. Dùng danh mục mặc định cho Git, đừng dựa vào màn hình này.
+
 Thêm thủ công, tab **Allow-list** có ba cách:
 
 - **Quét ứng dụng đang chạy** — liệt kê mọi ứng dụng đang chạy trên máy, tích cái nào được ra
