@@ -39,9 +39,19 @@
       ]
     },
     {
+      "name": "Claude Desktop",
+      "candidates": [
+        "%LOCALAPPDATA%\\AnthropicClaude\\claude.exe",
+        "%LOCALAPPDATA%\\AnthropicClaude\\app-*\\claude.exe",
+        "%LOCALAPPDATA%\\Programs\\Claude\\Claude.exe"
+      ]
+    },
+    {
       "name": "Codex CLI",
       "candidates": [
-        "%APPDATA%\\npm\\node_modules\\@openai\\codex\\bin\\codex.exe",
+        "%APPDATA%\\npm\\node_modules\\@openai\\codex-win32-x64\\bin\\*.exe",
+        "%APPDATA%\\npm\\node_modules\\@openai\\codex-win32-arm64\\bin\\*.exe",
+        "%APPDATA%\\npm\\node_modules\\@openai\\codex\\bin\\*.exe",
         "%USERPROFILE%\\.codex\\bin\\codex.exe"
       ]
     },

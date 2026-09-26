@@ -158,7 +158,68 @@ public sealed class AllowListViewModel : ObservableObject
             return;
         }
 
+        IReadOnlyList<string> seeded = SeedDefaults();
         Refresh();
+
+        if (seeded.Count > 0)
+        {
+            Status = $"Đã thêm mặc định {seeded.Count}: {string.Join(", ", seeded)}. "
+                + "Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+        }
+    }
+
+    /// <summary>
+    /// Puts the catalogued applications installed on this machine into the list.
+    /// </summary>
+    /// <remarks>
+    /// Runs on every load rather than only on a fresh machine, so an application installed later
+    /// becomes a default too without the user having to know a button exists. Removals are
+    /// recorded in the document, which is what stops this from undoing them.
+    /// </remarks>
+    private IReadOnlyList<string> SeedDefaults()
+    {
+        IReadOnlyList<DiscoveredApp> missing;
+        try
+        {
+            missing = DefaultAllowList.MissingFrom(_document, new KnownApps().Discover());
+        }
+        catch (InvalidDataException)
+        {
+            // An unreadable catalogue costs the defaults, not the list the user already has.
+            return Array.Empty<string>();
+        }
+
+        if (missing.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        foreach (DiscoveredApp app in missing)
+        {
+            AddEntry(app.ExecutablePath, app.Name);
+        }
+
+        _store.Save(_document);
+        return missing.Select(app => app.Name).ToList();
+    }
+
+    /// <summary>Adds one executable, and clears any record of it having been removed before.</summary>
+    /// <remarks>
+    /// Adding something back is a decision that replaces the earlier one to take it out;
+    /// leaving the removal recorded would make the entry vanish again at the next load.
+    /// </remarks>
+    private void AddEntry(string executablePath, string displayName)
+    {
+        _document.Apps.Add(new AllowedApp
+        {
+            ExecutablePath = executablePath,
+            DisplayName = displayName,
+            Sha256 = TryHash(executablePath),
+            AddedAt = DateTimeOffset.Now,
+        });
+
+        _document.RemovedDefaults.RemoveAll(
+            path => string.Equals(path, executablePath, StringComparison.OrdinalIgnoreCase));
     }
 
     private void Refresh()
@@ -217,13 +278,7 @@ public sealed class AllowListViewModel : ObservableObject
                 continue;
             }
 
-            _document.Apps.Add(new AllowedApp
-            {
-                ExecutablePath = path,
-                DisplayName = fileName,
-                Sha256 = TryHash(path),
-                AddedAt = DateTimeOffset.Now,
-            });
+            AddEntry(path, fileName);
 
             added.Add(fileName);
         }
@@ -281,13 +336,7 @@ public sealed class AllowListViewModel : ObservableObject
                 continue;
             }
 
-            _document.Apps.Add(new AllowedApp
-            {
-                ExecutablePath = app.ExecutablePath,
-                DisplayName = app.Name,
-                Sha256 = TryHash(app.ExecutablePath),
-                AddedAt = DateTimeOffset.Now,
-            });
+            AddEntry(app.ExecutablePath, app.Name);
 
             added.Add(app.Name);
         }
@@ -326,13 +375,7 @@ public sealed class AllowListViewModel : ObservableObject
                 continue;
             }
 
-            _document.Apps.Add(new AllowedApp
-            {
-                ExecutablePath = app.ExecutablePath,
-                DisplayName = app.Name,
-                Sha256 = TryHash(app.ExecutablePath),
-                AddedAt = DateTimeOffset.Now,
-            });
+            AddEntry(app.ExecutablePath, app.Name);
 
             added.Add(app.Name);
         }
@@ -357,7 +400,17 @@ public sealed class AllowListViewModel : ObservableObject
             return;
         }
 
+        string removed = _selected.Source.ExecutablePath;
         _document.Apps.Remove(_selected.Source);
+
+        // Recorded so the catalogue does not seed it back at the next load. Without this a
+        // default could be removed but never stay removed.
+        if (!_document.RemovedDefaults.Any(
+                path => string.Equals(path, removed, StringComparison.OrdinalIgnoreCase)))
+        {
+            _document.RemovedDefaults.Add(removed);
+        }
+
         _store.Save(_document);
         Refresh();
         Status = "Đã xoá khỏi danh sách. Bấm \"Áp dụng\" để cập nhật Windows Firewall.";

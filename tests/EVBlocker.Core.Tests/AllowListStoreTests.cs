@@ -27,6 +27,29 @@ public sealed class AllowListStoreTests : IDisposable
         Assert.Equal(AllowListDocument.CurrentSchemaVersion, document.SchemaVersion);
     }
 
+    /// <summary>
+    /// Removals are what stop the catalogue seeding a default back on the next start, so losing
+    /// them in the file format would make a removed default reappear.
+    /// </summary>
+    [Fact]
+    public void SaveThenLoad_KeepsRemovedDefaults()
+    {
+        var store = new AllowListStore(StorePath);
+        store.Save(new AllowListDocument { RemovedDefaults = { @"C:\Apps\zalo.exe" } });
+
+        Assert.Equal(new[] { @"C:\Apps\zalo.exe" }, store.Load().RemovedDefaults);
+    }
+
+    /// <summary>A file written before the field existed still reads, with nothing removed.</summary>
+    [Fact]
+    public void Load_FileWithoutRemovedDefaults_ReadsAsNoneRemoved()
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(StorePath, """{"SchemaVersion":1,"Apps":[]}""");
+
+        Assert.Empty(new AllowListStore(StorePath).Load().RemovedDefaults);
+    }
+
     [Fact]
     public void SaveThenLoad_RoundTripsEveryField()
     {

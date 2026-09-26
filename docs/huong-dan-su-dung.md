@@ -45,15 +45,26 @@ Dùng máy vài ngày như bình thường, rồi xem tab **Đã thử kết n�
 
 ### 2. Dựng allow-list
 
-Tab **Allow-list** có ba cách:
+Một số ứng dụng phổ biến **tự có sẵn trong allow-list** mỗi lần mở ứng dụng, không cần bấm gì:
+
+Chrome · Edge · Visual Studio Code · GoLand · Claude CLI · Claude Desktop · Codex CLI ·
+OneDrive · Google Drive · Zalo
+
+Chỉ những cái **thật sự đã cài trên máy** mới được thêm. Không thấy một cái trong danh sách nghĩa
+là máy chưa cài nó — tạo rule trỏ vào file không tồn tại thì Windows vẫn nhận, và allow-list trông
+như đúng trong khi không cho phép gì cả.
+
+Gỡ một ứng dụng khỏi danh sách là **quyết định vĩnh viễn**: nó được ghi lại trong `allowlist.json`
+nên lần mở sau không bị thêm lại. Muốn lấy lại thì bấm **Thêm ứng dụng phổ biến**.
+
+Thêm thủ công, tab **Allow-list** có ba cách:
 
 - **Quét ứng dụng đang chạy** — liệt kê mọi ứng dụng đang chạy trên máy, tích cái nào được ra
   internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần trong thư mục Windows
   bị ẩn mặc định, vì cho phép chúng theo đường dẫn hầu như luôn sai — baseline đã lo phần đó theo
   tên service.
-- **Thêm ứng dụng phổ biến** — dò các ứng dụng quen thuộc (trình duyệt, IDE, công cụ đồng bộ,
-  Zalo, Claude/Codex CLI) và chỉ thêm những cái **thật sự đã cài**. Máy nào cũng chỉ có một phần
-  trong danh sách đó, nên nút này không thêm thứ máy không có.
+- **Thêm ứng dụng phổ biến** — dò lại danh mục trên. Dùng khi vừa cài thêm một ứng dụng trong đó,
+  hoặc muốn lấy lại cái đã gỡ.
 - **Thêm ứng dụng…** — tự chọn file `.exe`.
 
 **Không cần tạo rule chặn cho những app không tích.** Khi bật chặn outbound, mọi thứ không có
@@ -174,6 +185,12 @@ này giúp kiểm soát phần mềm hoạt động bình thường, không ch�
 
 **Cho phép công cụ chạy script = cho phép mọi thứ chạy qua nó.** `powershell.exe`, `cmd.exe`,
 `curl.exe`, `python.exe` và tương tự — ứng dụng có cảnh báo trước khi thêm.
+
+**CLI viết bằng Node không cho phép riêng được.** Gemini CLI chẳng hạn, gói npm của nó khai báo
+`bin: gemini.js` — không có file `.exe` nào, tiến trình thật sự mở kết nối là `node.exe`. Cho
+phép `node.exe` là cho phép **mọi** script Node trên máy, nên nó rơi vào đúng cảnh báo ở trên và
+không nằm trong danh mục mặc định. Claude CLI và Codex CLI thì khác: cả hai đều có binary thật
+(`claude.exe`, `codex*.exe`), nên cho phép được chính xác.
 
 **Không lọc theo tên miền hay URL.** Windows Firewall không làm được việc đó. Chỉ chặn được theo
 chương trình.

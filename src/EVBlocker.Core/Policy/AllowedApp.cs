@@ -39,6 +39,19 @@ public sealed class AllowListDocument
 
     public List<AllowedApp> Apps { get; set; } = new();
 
+    /// <summary>
+    /// Executables the user took out of the list, so the catalogue does not put them back.
+    /// </summary>
+    /// <remarks>
+    /// The catalogued applications are seeded into the list on every start, which is what makes
+    /// them defaults rather than a button. Without a record of removals, seeding would undo the
+    /// user's decision at the next launch and there would be no way to refuse a default.
+    ///
+    /// Additive, so a file written by the previous build still reads: absent means nothing was
+    /// ever removed, which is exactly right for a list that predates the field.
+    /// </remarks>
+    public List<string> RemovedDefaults { get; set; } = new();
+
     public const int CurrentSchemaVersion = 1;
 }
 
