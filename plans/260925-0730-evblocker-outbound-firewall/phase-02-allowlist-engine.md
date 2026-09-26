@@ -1,6 +1,6 @@
 # Phase 02 — Allow-list store + rule engine
 
-**Status:** xong. Nhánh đọc đã verify thực nghiệm; **nhánh ghi chưa chạy được** (cần admin).
+**Status:** xong, đã verify đầy đủ. Nhánh ghi chạy thật qua `EVBlocker.Verify` (2026-09-26, 21/21 PASS).
 **Chạm firewall:** có, nhưng **chỉ thêm/xoá rule**. Không đổi `DefaultOutboundAction`.
 
 ## Lệch so với plan: dùng CsWin32 thay vì `[GeneratedComInterface]`

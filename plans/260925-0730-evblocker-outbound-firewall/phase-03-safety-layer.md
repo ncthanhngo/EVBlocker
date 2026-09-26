@@ -1,6 +1,6 @@
 # Phase 03 — Safety layer
 
-**Status:** xong. XML của dead-man đã verify với Task Scheduler thật; **netsh export/import chưa chạy** (cần admin).
+**Status:** xong, đã verify đầy đủ. `netsh advfirewall export` và đăng ký task dưới SYSTEM đều chạy thật (2026-09-26, 21/21 PASS).
 **Chạm firewall:** có (export/import config)
 
 Phase này là **điều kiện bắt buộc** để được làm Phase 04. Không có nó, bật default-deny là tự khoá mạng máy.

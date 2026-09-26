@@ -1,6 +1,6 @@
 # Phase 04 — Enforcement + UI
 
-**Status:** code xong. **Chưa bật thật lần nào** — cần admin, và có chủ ý không bật trên máy dev.
+**Status:** code xong. Đường ghi đã verify. **Chưa bật default-deny thật lần nào** — có chủ ý không bật trên máy dev, cần máy ảo.
 **Chạm firewall:** có, rủi ro cao nhất của dự án
 
 ## Lệch so với plan: trạng thái suy ra, không có state.json

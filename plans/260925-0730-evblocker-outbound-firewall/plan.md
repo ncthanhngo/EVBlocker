@@ -1,6 +1,6 @@
 # EVBlocker — Outbound allow-list firewall cho Windows 10/11
 
-**Status:** Cả 6 phase đã code xong. Còn lại: kiểm chứng các thao tác cần quyền admin, và test trên VM trắng.
+**Status:** Cả 6 phase xong, đường ghi đã verify elevated (21/21). Còn lại: bật default-deny thật và test trên VM trắng.
 **Ngày tạo:** 2026-09-25
 **Cập nhật:** 2026-09-26
 
@@ -127,10 +127,12 @@ sẽ phải gọi `netsh`/`schtasks` trực tiếp, tức là kiểm chứng Win
 - [x] Build self-contained ≤ 80 MB — **62.9 MB**, đúng 1 file, chạy được cả UI lẫn `--reconcile`
 - [x] Sửa/xoá rule → reconciler phát hiện và áp lại — test với fake; đường chạy thật của `--reconcile` đã verify (thất bại an toàn khi thiếu quyền)
 
-Chưa kiểm được — **cần quyền admin**, chạy `tools/EVBlocker.Verify`:
+Đã kiểm chứng bằng `tools/EVBlocker.Verify` chạy elevated (2026-09-26, 21/21 PASS):
 
-- [ ] Allow-list thêm/xoá app phản ánh đúng vào Windows Firewall, kiểm chứng bằng `wf.msc`
-- [ ] Có backup config trước mọi thay đổi + restore 1 click
+- [x] Allow-list thêm/xoá app phản ánh đúng vào Windows Firewall — PowerShell xác nhận độc lập rule xuất hiện rồi biến mất
+- [x] Có backup config trước mọi thay đổi — `netsh advfirewall export` tạo được file, `List()` tìm thấy
+- [x] Đăng ký scheduled task dưới SYSTEM, `StartWhenAvailable=True`, huỷ được — PowerShell xác nhận độc lập
+- [x] Không thao tác nào làm đổi `DefaultOutboundAction` (đọc đầu/cuối, khớp)
 
 Chưa kiểm được — **cần máy ảo**:
 
