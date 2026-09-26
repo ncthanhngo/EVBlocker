@@ -66,7 +66,8 @@ src/EVBlocker.Core/     class library, không phụ thuộc UI  -> unit test đ�
   Policy/     AllowListStore, PolicyApplier
   Baseline/   OsBaseline + baseline-allow.json (data, không hardcode)
   Safety/     ConfigBackup, DeadManSwitch
-  Startup/    TaskSchedulerHost, PolicyReconciler   # áp lại policy khi boot nếu bị drift
+  Startup/    SchTasksHost, StartupReconcileTask, PolicyReconciler  # áp lại rule khi boot
+  Updates/    ReleaseVersion  # so tag GitHub với version đang chạy
   Audit/      AuditPolicyManager
 src/EVBlocker.App/      WPF, chỉ gọi Core qua interface
 tests/EVBlocker.Core.Tests/
@@ -84,8 +85,8 @@ Baseline allow-list là **file JSON**, không phải code — nâng cấp danh s
 | [02](phase-02-allowlist-engine.md) | Allow-list store + tạo/xoá rule qua COM | Có (chỉ thêm rule, không đổi default) |
 | [03](phase-03-safety-layer.md) | Backup/restore, dead-man switch, baseline JSON | Có |
 | [04](phase-04-enforcement.md) | Bật `DefaultOutboundAction = Block` + UI hoàn chỉnh | Có, rủi ro cao |
-| [05](phase-05-startup-persistence.md) | Reconciler chạy lúc boot, xử lý reboot, tray | Có |
-| [06](phase-06-packaging.md) | Self-contained single-file, trim, kiểm dung lượng | Không |
+| [05](phase-05-startup-persistence.md) | Reconciler chạy lúc boot, xử lý reboot (bỏ tray) | Có |
+| [06](phase-06-packaging.md) | Self-contained single-file (không trim được), release workflow | Không |
 
 **Dependency:** 01 → 02 → 03 → 04 → 05. Phase 04 **không được làm trước** 03 — bật default-deny mà chưa có đường rollback là tự khoá mạng của máy.
 
@@ -110,16 +111,25 @@ sẽ phải gọi `netsh`/`schtasks` trực tiếp, tức là kiểm chứng Win
 
 ## Acceptance criteria (toàn dự án)
 
-- [ ] Scan liệt kê đúng process đang có kết nối ra IP public, kèm đường dẫn exe
-- [ ] History đọc được event 5157, group theo exe, đếm số lần bị chặn
-- [ ] Allow-list thêm/xoá app phản ánh đúng vào Windows Firewall, kiểm chứng được bằng `wf.msc`
-- [ ] Bật default-deny xong, các thành phần trong baseline vẫn hoạt động: DNS, Windows Update, Defender signature, activation, time sync
+Đã kiểm chứng bằng thực nghiệm:
+
+- [x] Scan liệt kê đúng process đang có kết nối ra IP public — đối chiếu `Get-NetTCPConnection`, 37/37 dòng khớp, 0 dòng lạ
+- [x] History parse được event 5157/5156 và map path kernel sang ổ đĩa — test với XML mẫu
+- [x] `dotnet test` xanh (227), `dotnet build` 0 warning
+- [x] Build self-contained ≤ 80 MB — **62.9 MB**, đúng 1 file, chạy được cả UI lẫn `--reconcile`
+- [x] Sửa/xoá rule → reconciler phát hiện và áp lại — test với fake; đường chạy thật của `--reconcile` đã verify (thất bại an toàn khi thiếu quyền)
+
+Chưa kiểm được — **cần quyền admin**, chạy `tools/EVBlocker.Verify`:
+
+- [ ] Allow-list thêm/xoá app phản ánh đúng vào Windows Firewall, kiểm chứng bằng `wf.msc`
 - [ ] Có backup config trước mọi thay đổi + restore 1 click
-- [ ] Dead-man switch tự revert được **kể cả khi app bị kill hoặc máy reboot**
-- [ ] Sau reboot, policy vẫn hiệu lực mà **không cần mở app**
-- [ ] Sửa/xoá rule bên ngoài app → reconciler lúc boot phát hiện và áp lại
-- [ ] `dotnet test` xanh; `dotnet build` không warning mới
-- [ ] Build self-contained ≤ 80 MB
+
+Chưa kiểm được — **cần máy ảo**:
+
+- [ ] Bật default-deny xong, baseline vẫn hoạt động: DNS, Windows Update, Defender signature, activation, time sync
+- [ ] Dead-man switch tự revert **kể cả khi app bị kill hoặc máy reboot**
+- [ ] Sau reboot, policy vẫn hiệu lực mà không cần mở app
+- [ ] Bản self-contained chạy trên máy Windows trắng (không cài .NET)
 
 ## Rủi ro đã biết
 
