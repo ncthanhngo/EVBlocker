@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "apps": [
+    {
+      "name": "Google Chrome",
+      "candidates": [
+        "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe",
+        "%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe",
+        "%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe"
+      ]
+    },
+    {
+      "name": "Microsoft Edge",
+      "candidates": [
+        "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe",
+        "%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe"
+      ]
+    },
+    {
+      "name": "Visual Studio Code",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe",
+        "%ProgramFiles%\\Microsoft VS Code\\Code.exe"
+      ]
+    },
+    {
+      "name": "GoLand",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\GoLand\\bin\\goland64.exe",
+        "%LOCALAPPDATA%\\JetBrains\\Toolbox\\apps\\goland\\*\\*\\bin\\goland64.exe",
+        "%ProgramFiles%\\JetBrains\\*\\bin\\goland64.exe"
+      ]
+    },
+    {
+      "name": "Claude CLI",
+      "candidates": [
+        "%APPDATA%\\npm\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe",
+        "%LOCALAPPDATA%\\Programs\\claude\\claude.exe"
+      ]
+    },
+    {
+      "name": "Codex CLI",
+      "candidates": [
+        "%APPDATA%\\npm\\node_modules\\@openai\\codex\\bin\\codex.exe",
+        "%USERPROFILE%\\.codex\\bin\\codex.exe"
+      ]
+    },
+    {
+      "name": "OneDrive",
+      "candidates": [
+        "%LOCALAPPDATA%\\Microsoft\\OneDrive\\OneDrive.exe",
+        "%ProgramFiles%\\Microsoft OneDrive\\OneDrive.exe"
+      ]
+    },
+    {
+      "name": "Google Drive",
+      "candidates": [
+        "%ProgramFiles%\\Google\\Drive File Stream\\*\\GoogleDriveFS.exe",
+        "%ProgramFiles%\\Google\\Drive\\GoogleDriveFS.exe"
+      ]
+    },
+    {
+      "name": "Zalo",
+      "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Zalo\\Zalo.exe",
+        "%LOCALAPPDATA%\\Zalo\\Zalo.exe",
+        "%ProgramFiles%\\Zalo\\Zalo.exe"
+      ]
+    }
+  ]
+}

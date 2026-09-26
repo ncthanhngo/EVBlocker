@@ -145,6 +145,9 @@
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
           <Button Content="Thêm ứng dụng…" Style="{StaticResource PrimaryButton}"
                   Command="{Binding AddCommand}" />
+          <Button Content="Thêm ứng dụng phổ biến" Margin="10,0,0,0"
+                  Command="{Binding AddCommonCommand}"
+                  ToolTip="Dò các ứng dụng quen thuộc đã cài trên máy và thêm vào danh sách" />
           <Button Content="Xoá khỏi danh sách" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
           <Button Content="Áp dụng vào Firewall" Margin="10,0,0,0" Command="{Binding ApplyCommand}"
                   ToolTip="Ghi rule vào Windows Firewall. Cần quyền Admin." />

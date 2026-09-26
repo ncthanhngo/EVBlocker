@@ -18,6 +18,7 @@
     <!-- Shipped inside the assembly so a single-file build carries its own baseline. An operator
          can still override it with a file in ProgramData; see OsBaseline. -->
     <EmbeddedResource Include="Baseline\baseline-allow.json" />
+    <EmbeddedResource Include="Policy\known-apps.json" />
   </ItemGroup>
 
   <ItemGroup>

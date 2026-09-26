@@ -65,6 +65,7 @@ public sealed class AllowListViewModel : ObservableObject
     private readonly Func<string, string, bool> _confirm;
 
     private readonly RelayCommand _addCommand;
+    private readonly RelayCommand _addCommonCommand;
     private readonly RelayCommand _removeCommand;
     private readonly RelayCommand _applyCommand;
 
@@ -94,6 +95,7 @@ public sealed class AllowListViewModel : ObservableObject
         _confirm = confirm;
 
         _addCommand = new RelayCommand(Add, () => !_loadFailed);
+        _addCommonCommand = new RelayCommand(AddCommonApps, () => !_loadFailed);
         _removeCommand = new RelayCommand(RemoveSelected, () => _selected is not null && !_loadFailed);
         _applyCommand = new RelayCommand(ApplyToFirewall, () => !_loadFailed);
 
@@ -121,6 +123,8 @@ public sealed class AllowListViewModel : ObservableObject
     }
 
     public System.Windows.Input.ICommand AddCommand => _addCommand;
+
+    public System.Windows.Input.ICommand AddCommonCommand => _addCommonCommand;
 
     public System.Windows.Input.ICommand RemoveCommand => _removeCommand;
 
@@ -167,6 +171,7 @@ public sealed class AllowListViewModel : ObservableObject
     private void RefreshCommands()
     {
         _addCommand.RaiseCanExecuteChanged();
+        _addCommonCommand.RaiseCanExecuteChanged();
         _removeCommand.RaiseCanExecuteChanged();
         _applyCommand.RaiseCanExecuteChanged();
     }
@@ -219,6 +224,61 @@ public sealed class AllowListViewModel : ObservableObject
         _store.Save(_document);
         Refresh();
         Status = $"Đã thêm {added.Count} ứng dụng. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+    }
+
+    /// <summary>
+    /// Adds the catalogued applications that are installed on this machine.
+    /// </summary>
+    /// <remarks>
+    /// Only ones that exist. Adding a catalogue entry whose file is not there would create a rule
+    /// Windows accepts and that then allows nothing - the worst kind of failure, because the
+    /// allow-list would look correct.
+    /// </remarks>
+    private void AddCommonApps()
+    {
+        IReadOnlyList<DiscoveredApp> discovered;
+        try
+        {
+            discovered = new KnownApps().Discover();
+        }
+        catch (InvalidDataException ex)
+        {
+            Status = $"Không đọc được danh mục ứng dụng: {ex.Message}";
+            return;
+        }
+
+        var added = new List<string>();
+
+        foreach (DiscoveredApp app in discovered)
+        {
+            if (_document.Apps.Any(a =>
+                    string.Equals(a.ExecutablePath, app.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            _document.Apps.Add(new AllowedApp
+            {
+                ExecutablePath = app.ExecutablePath,
+                DisplayName = app.Name,
+                Sha256 = TryHash(app.ExecutablePath),
+                AddedAt = DateTimeOffset.Now,
+            });
+
+            added.Add(app.Name);
+        }
+
+        if (added.Count == 0)
+        {
+            Status = discovered.Count == 0
+                ? "Không tìm thấy ứng dụng phổ biến nào được cài trên máy."
+                : "Các ứng dụng tìm thấy đều đã có trong danh sách.";
+            return;
+        }
+
+        _store.Save(_document);
+        Refresh();
+        Status = $"Đã thêm {added.Count}: {string.Join(", ", added)}. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
     }
 
     private void RemoveSelected()
