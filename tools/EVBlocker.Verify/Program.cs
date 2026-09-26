@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Xml.Linq;
 using EVBlocker.Core;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.Safety;
@@ -6,7 +9,9 @@ using EVBlocker.Core.Safety;
 namespace EVBlocker.Verify;
 
 /// <summary>
-/// Exercises every privileged operation EVBlocker performs, without enabling outbound blocking.
+/// Exercises every privileged operation EVBlocker performs, without enabling outbound blocking
+/// through the firewall. The boot guard check does cut the network for a few seconds; see
+/// VerifyBootGuard.
 /// </summary>
 /// <remarks>
 /// These paths cannot be unit tested: they need administrator rights, and the development machine
@@ -24,6 +29,8 @@ internal static class Program
     private static int _passed;
     private static int _failed;
 
+    private static int _dumpCount;
+
     private static int Main()
     {
         // The console starts on the machine's OEM code page, which renders Vietnamese as mojibake.
@@ -39,7 +46,8 @@ internal static class Program
 
         Console.WriteLine("EVBlocker — kiểm chứng đường ghi (write path)");
         Console.WriteLine(new string('=', 60));
-        Console.WriteLine("Không bật chặn outbound. Mọi thứ tạo ra đều được dọn lại.");
+        Console.WriteLine("Không bật chặn trong tường lửa. Bước kiểm khoá lúc khởi động cắt mạng vài giây.");
+        Console.WriteLine("Mọi thứ tạo ra đều được dọn lại.");
         Console.WriteLine();
 
         if (!Elevation.IsElevated)
@@ -61,6 +69,7 @@ internal static class Program
 
         VerifyFirewallRules(policy);
         VerifyBackupAndDeadMan();
+        VerifyBootGuard();
 
         Console.WriteLine();
         IReadOnlyDictionary<FirewallProfile, FirewallAction> after = policy.GetDefaultOutboundActions();
@@ -216,6 +225,199 @@ internal static class Program
             TryDeleteDirectory(directory);
             Check("Đã dọn thư mục backup tạm", () => !Directory.Exists(directory));
         }
+    }
+
+    /// <summary>
+    /// Installs the boot guard, engages it the way a reboot would, and removes it.
+    /// </summary>
+    /// <remarks>
+    /// The one step in this tool that does cut the network: engaging is the only way to see the
+    /// block work without rebooting, and it lasts for two connection attempts. The guard is
+    /// removed in the finally block whatever happens before it.
+    ///
+    /// The outbound probe only means something if this process may reach the internet under the
+    /// current firewall policy. Run through dotnet.exe (dotnet EVBlocker.Verify.dll) when
+    /// blocking is on and dotnet is on the allow-list; otherwise the probe is reported as skipped
+    /// rather than as a pass or a failure it cannot tell apart.
+    /// </remarks>
+    private static void VerifyBootGuard()
+    {
+        Console.WriteLine();
+        Console.WriteLine("-- Khoá lúc khởi động (WFP) --");
+
+        var guard = new BootGuard();
+
+        BootGuardState initial = guard.GetState();
+        if (initial != BootGuardState.Absent)
+        {
+            Console.WriteLine($"  [SKIP] Khoá đang tồn tại ({initial}) — không đụng vào khoá thật.");
+            return;
+        }
+
+        bool online = CanReachInternet();
+        Console.WriteLine(online
+            ? "  Tiến trình này ra được internet: kiểm cả việc chặn thật."
+            : "  [SKIP] Tiến trình này vốn không ra được internet — chỉ kiểm trạng thái, không kiểm chặn.");
+
+        try
+        {
+            Check("Cài khoá (đã kèm chốt mở)", () =>
+            {
+                guard.Install();
+                return guard.GetState() == BootGuardState.Released;
+            });
+
+            Check("Cài lần hai không lỗi, không đổi trạng thái", () =>
+            {
+                guard.Install();
+                return guard.GetState() == BootGuardState.Released;
+            });
+
+            if (online)
+            {
+                Check("Có khoá + chốt mở: vẫn ra internet như trước", CanReachInternet);
+            }
+
+            // Independent confirmation of the flags, read back through netsh rather than through
+            // the code that wrote them.
+            Check("netsh thấy khoá BOOTTIME và PERSISTENT, chốt mở không persistent", () =>
+            {
+                string xml = DumpWfpFilters();
+                int bootBlocks = CountFilters(xml, "Block - BootTime", "FWPM_FILTER_FLAG_BOOTTIME");
+                int persistentBlocks = CountFilters(xml, "Block - Persistent", "FWPM_FILTER_FLAG_PERSISTENT");
+                int persistentReleases = CountFilters(xml, "Release - Runtime", "FWPM_FILTER_FLAG_PERSISTENT");
+                int releases = CountFilters(xml, "Release - Runtime", null);
+                int all = CountFilters(xml, "EVBlocker boot guard", null);
+
+                Console.WriteLine(
+                    $"         boot-time block={bootBlocks}, persistent block={persistentBlocks}, "
+                    + $"release={releases} (persistent {persistentReleases}), tổng filter của khoá={all}");
+
+                return bootBlocks == 2 && persistentBlocks == 2 && persistentReleases == 0 && releases == 2;
+            });
+
+            Check("Gỡ chốt mở (giống lúc vừa khởi động)", () =>
+            {
+                guard.Engage();
+                return guard.GetState() == BootGuardState.Engaged;
+            });
+
+            if (online)
+            {
+                Check("Khoá đang chặn: KHÔNG ra được internet", () => !CanReachInternet());
+            }
+
+            Check("Khoá đang chặn: loopback vẫn thông", CanReachLoopback);
+
+            Check("Mở chốt lại", () =>
+            {
+                guard.Release();
+                return guard.GetState() == BootGuardState.Released;
+            });
+
+            if (online)
+            {
+                Check("Mở chốt xong: ra internet lại được", CanReachInternet);
+            }
+        }
+        finally
+        {
+            Check("Gỡ khoá", () =>
+            {
+                guard.Remove();
+                return guard.GetState() == BootGuardState.Absent;
+            });
+
+            Check("Gỡ lần hai không lỗi", () =>
+            {
+                guard.Remove();
+                return true;
+            });
+
+            Check("netsh không còn filter nào của khoá", () => CountFilters(DumpWfpFilters(), "EVBlocker boot guard", null) == 0);
+
+            if (online)
+            {
+                Check("Gỡ xong: vẫn ra internet", CanReachInternet);
+            }
+        }
+    }
+
+    private static bool CanReachInternet() => TryConnect(new IPEndPoint(IPAddress.Parse("1.1.1.1"), 443));
+
+    private static bool CanReachLoopback()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+
+        try
+        {
+            return TryConnect((IPEndPoint)listener.LocalEndpoint);
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
+    private static bool TryConnect(IPEndPoint endpoint)
+    {
+        using var client = new TcpClient();
+
+        try
+        {
+            return client.ConnectAsync(endpoint).Wait(TimeSpan.FromSeconds(4)) && client.Connected;
+        }
+        catch (AggregateException)
+        {
+            return false;
+        }
+    }
+
+    private static string DumpWfpFilters()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"evblocker-verify-wfp-{Guid.NewGuid():N}.xml");
+
+        try
+        {
+            // 'show state', not 'show filters': the latter answers which filter wins for matching
+            // traffic, so a heavier unconditional filter in the same sublayer hides the rest - which,
+            // while the guard is released, is the whole guard.
+            (int exitCode, _) = RunPowerShell($"netsh wfp show state file='{path}' | Out-Null");
+            if (exitCode != 0 || !File.Exists(path))
+            {
+                return string.Empty;
+            }
+
+            // Kept beside the temp files so a failed check can be read by hand afterwards.
+            File.Copy(path, Path.Combine(Path.GetTempPath(), $"evblocker-verify-wfp-{++_dumpCount}.xml"), overwrite: true);
+            return File.ReadAllText(path);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
+    /// Counts filter items whose name contains <paramref name="nameFragment"/> and, when given,
+    /// whose flags include <paramref name="flag"/>. Returns -1 when the dump could not be read.
+    /// </summary>
+    private static int CountFilters(string xml, string nameFragment, string? flag)
+    {
+        if (xml.Length == 0)
+        {
+            return -1;
+        }
+
+        // 'show state' writes two root elements, wfpstate and firewallState, so the file is not a
+        // well-formed document until it is given one root. The declaration has to go with it.
+        int declarationEnd = xml.StartsWith("<?xml", StringComparison.Ordinal) ? xml.IndexOf("?>", StringComparison.Ordinal) + 2 : 0;
+        var document = XDocument.Parse($"<dump>{xml[declarationEnd..]}</dump>");
+
+        return document.Descendants("filters").Elements("item").Count(item =>
+            (item.Element("displayData")?.Element("name")?.Value ?? string.Empty).Contains(nameFragment, StringComparison.Ordinal)
+            && (flag is null || (item.Element("flags")?.Elements("item").Any(f => f.Value == flag) ?? false)));
     }
 
     private static void Check(string description, Func<bool> probe)

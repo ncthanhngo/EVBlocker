@@ -9,3 +9,32 @@ NetFwRule
 NET_FW_ACTION
 NET_FW_RULE_DIRECTION
 NET_FW_PROFILE_TYPE2
+// Windows Filtering Platform management API, for the boot-time outbound guard (Firewall/BootGuard.cs).
+// Firewall rules cannot create boot-time filters, so this one feature goes below the firewall API.
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmEngineOpen0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmEngineClose0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmTransactionBegin0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmTransactionCommit0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmTransactionAbort0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmProviderAdd0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmProviderDeleteByKey0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmSubLayerAdd0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmSubLayerDeleteByKey0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmFilterAdd0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmFilterDeleteByKey0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmFilterGetByKey0
+Windows.Win32.NetworkManagement.WindowsFilteringPlatform.FwpmFreeMemory0
+FWPM_LAYER_ALE_AUTH_CONNECT_V4
+FWPM_LAYER_ALE_AUTH_CONNECT_V6
+FWPM_CONDITION_FLAGS
+FWPM_CONDITION_IP_PROTOCOL
+FWPM_CONDITION_IP_REMOTE_PORT
+FWP_CONDITION_FLAG_IS_LOOPBACK
+FWPM_FILTER_FLAGS
+FWPM_PROVIDER_FLAG_PERSISTENT
+FWPM_SUBLAYER_FLAG_PERSISTENT
+RPC_C_AUTHN_DEFAULT
+FWP_E_ALREADY_EXISTS
+FWP_E_FILTER_NOT_FOUND
+FWP_E_SUBLAYER_NOT_FOUND
+FWP_E_PROVIDER_NOT_FOUND

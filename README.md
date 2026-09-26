@@ -71,7 +71,10 @@ PowerShell **as Administrator**:
 ```
 
 Nó tạo rồi xoá một rule, export cấu hình, đăng ký rồi huỷ một task dưới SYSTEM — **không bật
-chặn**, và đọc `DefaultOutboundAction` ở đầu và cuối để chắc chắn không có gì làm nó thay đổi.
+chặn** trong tường lửa, và đọc `DefaultOutboundAction` ở đầu và cuối để chắc chắn không có gì làm
+nó thay đổi. Nó cũng cài, bật thử rồi gỡ khoá lúc khởi động — **máy mất mạng vài giây** ở bước
+này. Chạy qua `dotnet EVBlocker.Verify.dll` (khi `dotnet.exe` nằm trong danh sách cho phép) thì
+bước đó kiểm được cả việc chặn thật, không chỉ trạng thái.
 
 ## Lưu ý
 
