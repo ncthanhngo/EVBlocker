@@ -24,13 +24,13 @@ public sealed class ConnectionRowViewModel
         {
             { ProcessId: 0 } => "(tiến trình đã kết thúc)",
             { ProcessId: 4 } => "System",
-            { ExecutablePath: null } => "(không đọc được — cần Admin)",
+            { ExecutablePath: null } => "(cần quyền quản trị)",
             var r => System.IO.Path.GetFileName(r.ExecutablePath!),
         };
 
         Destination = record.Remote is null ? "—" : record.Remote.Address.ToString();
         Port = record.Remote?.Port.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "—";
-        State = record.State?.ToString() ?? "—";
+        State = Describe(record.State);
         Local = record.Local.ToString();
     }
 
@@ -47,6 +47,27 @@ public sealed class ConnectionRowViewModel
     public string Local { get; }
     public bool IsInternet { get; }
 
+    /// <summary>
+    /// The TCP state in words anyone can act on.
+    /// </summary>
+    /// <remarks>
+    /// The enum names are the protocol's own - TimeWait, FinWait2, LastAck - and they tell
+    /// someone deciding what to allow nothing at all. What matters to that decision is only
+    /// whether the connection is being set up, carrying traffic, or finishing.
+    /// </remarks>
+    private static string Describe(TcpConnectionState? state) => state switch
+    {
+        null => "—",
+        TcpConnectionState.Established => "Đang kết nối",
+        TcpConnectionState.Listen => "Đang chờ",
+        TcpConnectionState.SynSent or TcpConnectionState.SynReceived => "Đang mở kết nối",
+        TcpConnectionState.Closed => "Đã đóng",
+
+        // Every remaining value is a stage of the shutdown handshake. Naming them apart would
+        // add six pieces of vocabulary to learn and change no decision anyone makes here.
+        _ => "Đang đóng",
+    };
+
     /// <summary>Tooltip text; falls back to the reason the path is missing.</summary>
-    public string PathTooltip => FullPath ?? "Không mở được process để lấy đường dẫn.";
+    public string PathTooltip => FullPath ?? "Không đọc được đường dẫn của tiến trình này.";
 }

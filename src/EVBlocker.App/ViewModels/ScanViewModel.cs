@@ -149,7 +149,7 @@ public sealed class ScanViewModel : ObservableObject
             $"Đọc được {scan.ProcessesSeen - scan.ProcessesUnreadable}/{scan.ProcessesSeen} tiến trình");
 
         Status = scan.ProcessesUnreadable > 0 && !ElevationService.IsElevated
-            ? $"{coverage}. Chạy với quyền Admin để thấy đầy đủ."
+            ? $"{coverage}. Chạy với quyền quản trị để thấy đầy đủ."
             : $"{coverage}.";
 
         ApplyFilter();

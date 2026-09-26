@@ -53,7 +53,7 @@ public sealed class InstalledProgramRowViewModel : ObservableObject
 
     public string Status => Source.Executables.Count switch
     {
-        0 => "Không xác định được file",
+        0 => "Không tìm được file chạy",
         var count when AllowedCount == count => "Đã cho phép",
         var count when AllowedCount > 0 => $"Cho phép {AllowedCount}/{count}",
         1 => "Chưa quyết định",
@@ -62,7 +62,7 @@ public sealed class InstalledProgramRowViewModel : ObservableObject
 
     /// <summary>Full list of paths, so a row covering several files can be checked before ticking.</summary>
     public string PathTooltip => Source.Executables.Count == 0
-        ? "Mục gỡ cài đặt không cho biết file thực thi. Dùng nút \"Thêm ứng dụng…\" ở tab Allow-list."
+        ? "Windows không cho biết file chạy của phần mềm này. Dùng nút \"Thêm ứng dụng…\" ở mục Danh sách cho phép."
         : string.Join("\n", Source.Executables);
 }
 
@@ -162,7 +162,7 @@ public sealed class InstalledProgramsViewModel : ObservableObject
     {
         _isBusy = true;
         RefreshCommands();
-        Status = "Đang đọc danh sách phần mềm…";
+        Status = "Đang đọc danh sách phần mềm trên máy…";
 
         IReadOnlySet<string> allowed = _allowedPaths();
 
@@ -221,8 +221,8 @@ public sealed class InstalledProgramsViewModel : ObservableObject
         int added = _allow(picked);
 
         Status = added == 0
-            ? "Những file đó đã có trong allow-list."
-            : $"Đã thêm {added} file vào allow-list. Sang tab Allow-list và bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+            ? "Những file đó đã được cho phép rồi."
+            : $"Đã cho phép {added} file. Sang mục Danh sách cho phép rồi bấm \"Lưu vào tường lửa\" để áp dụng.";
 
         // Reloaded rather than patched: the allow-list is the source of truth for what a row
         // says, and it has just changed underneath every row, not only the ticked ones.

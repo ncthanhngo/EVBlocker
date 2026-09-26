@@ -117,7 +117,7 @@ public sealed class ActiveConnectionsViewModel : ObservableObject
         int internetCount = snapshot.Count(record => record.IsRemoteInternet);
         Summary = string.Create(
             CultureInfo.CurrentCulture,
-            $"{snapshot.Count} socket · {internetCount} ra internet · hiện {Rows.Count} dòng · cập nhật {DateTime.Now:HH:mm:ss}");
+            $"{snapshot.Count} kết nối · {internetCount} ra internet · hiện {Rows.Count} dòng · cập nhật {DateTime.Now:HH:mm:ss}");
     }
 
     private bool Matches(ConnectionRecord record)

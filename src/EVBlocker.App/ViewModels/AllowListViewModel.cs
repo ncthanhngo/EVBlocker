@@ -153,7 +153,7 @@ public sealed class AllowListViewModel : ObservableObject
             // Left loaded-but-broken on purpose. Replacing it with an empty list here and then
             // letting the user press Apply would delete every rule they had.
             _loadFailed = true;
-            Status = $"Không đọc được danh sách: {ex.Message}";
+            Status = $"Không đọc được danh sách cho phép: {ex.Message}";
             RefreshCommands();
             return;
         }
@@ -163,15 +163,15 @@ public sealed class AllowListViewModel : ObservableObject
 
         if (seeded.Count > 0)
         {
-            Status = $"Đã thêm mặc định {seeded.Count}: {string.Join(", ", seeded.Names)}. "
-                + "Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+            Status = $"Đã tự cho phép {seeded.Count} phần mềm quen thuộc: {string.Join(", ", seeded.Names)}. "
+                + "Bấm \"Lưu vào tường lửa\" để áp dụng.";
 
             if (seeded.ScriptHosts.Count > 0)
             {
                 // Adding one of these by hand asks first. Seeding cannot ask - nobody is at the
                 // keyboard yet - so it says so instead of letting the warning quietly not happen.
-                Status += $" Trong đó {string.Join(", ", seeded.ScriptHosts)} chạy được mã tuỳ ý: "
-                    + "cho phép chúng là cho phép mọi script chạy qua chúng.";
+                Status += $" Trong đó {string.Join(", ", seeded.ScriptHosts)} chạy được lệnh bất kỳ: "
+                    + "cho phép chúng nghĩa là mọi lệnh chạy qua chúng cũng ra được internet.";
             }
         }
     }
@@ -255,10 +255,10 @@ public sealed class AllowListViewModel : ObservableObject
 
         int missing = Rows.Count(r => r.FileMissing);
         Status = Rows.Count == 0
-            ? "Chưa có ứng dụng nào được phép."
+            ? "Chưa cho phép phần mềm nào."
             : string.Create(
                 CultureInfo.CurrentCulture,
-                $"{Rows.Count} ứng dụng được phép{(missing > 0 ? $" · {missing} file không còn tồn tại" : string.Empty)}.");
+                $"Đang cho phép {Rows.Count} phần mềm{(missing > 0 ? $" · {missing} file không còn trên máy" : string.Empty)}.");
 
         RefreshCommands();
     }
@@ -295,8 +295,8 @@ public sealed class AllowListViewModel : ObservableObject
             if (Interpreters.Contains(fileName)
                 && !_confirm(
                     "Cho phép công cụ này?",
-                    $"{fileName} có thể chạy mã tuỳ ý. Cho phép nó ra internet nghĩa là cho phép "
-                    + "mọi script chạy qua nó ra internet.\n\nVẫn thêm?"))
+                    $"{fileName} chạy được lệnh bất kỳ. Cho phép nó ra internet nghĩa là mọi lệnh "
+                    + "chạy qua nó cũng ra được internet.\n\nVẫn cho phép?"))
             {
                 continue;
             }
@@ -313,7 +313,7 @@ public sealed class AllowListViewModel : ObservableObject
 
         _store.Save(_document);
         Refresh();
-        Status = $"Đã thêm {added.Count} ứng dụng. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+        Status = $"Đã cho phép thêm {added.Count} phần mềm. Bấm \"Lưu vào tường lửa\" để áp dụng.";
     }
 
     /// <summary>
@@ -343,8 +343,8 @@ public sealed class AllowListViewModel : ObservableObject
         int added = AddApps(picked);
 
         Status = added == 0
-            ? "Những ứng dụng đã chọn đều có sẵn trong danh sách."
-            : $"Đã thêm {added} ứng dụng từ kết quả quét. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+            ? "Những phần mềm đã chọn đều được cho phép rồi."
+            : $"Đã cho phép thêm {added} phần mềm. Bấm \"Lưu vào tường lửa\" để áp dụng.";
     }
 
     /// <summary>
@@ -382,8 +382,8 @@ public sealed class AllowListViewModel : ObservableObject
             if (Interpreters.Contains(fileName)
                 && !_confirm(
                     "Cho phép công cụ này?",
-                    $"{fileName} có thể chạy mã tuỳ ý. Cho phép nó ra internet nghĩa là cho phép "
-                    + "mọi script chạy qua nó ra internet.\n\nVẫn thêm?"))
+                    $"{fileName} chạy được lệnh bất kỳ. Cho phép nó ra internet nghĩa là mọi lệnh "
+                    + "chạy qua nó cũng ra được internet.\n\nVẫn cho phép?"))
             {
                 continue;
             }
@@ -414,7 +414,7 @@ public sealed class AllowListViewModel : ObservableObject
         }
         catch (InvalidDataException ex)
         {
-            Status = $"Không đọc được danh mục ứng dụng: {ex.Message}";
+            Status = $"Không đọc được danh mục phần mềm quen thuộc: {ex.Message}";
             return;
         }
 
@@ -436,14 +436,14 @@ public sealed class AllowListViewModel : ObservableObject
         if (added.Count == 0)
         {
             Status = discovered.Count == 0
-                ? "Không tìm thấy ứng dụng phổ biến nào được cài trên máy."
-                : "Các ứng dụng tìm thấy đều đã có trong danh sách.";
+                ? "Không tìm thấy phần mềm quen thuộc nào trên máy này."
+                : "Những phần mềm tìm thấy đều đã được cho phép rồi.";
             return;
         }
 
         _store.Save(_document);
         Refresh();
-        Status = $"Đã thêm {added.Count}: {string.Join(", ", added)}. Bấm \"Áp dụng\" để ghi vào Windows Firewall.";
+        Status = $"Đã cho phép {added.Count}: {string.Join(", ", added)}. Bấm \"Lưu vào tường lửa\" để áp dụng.";
     }
 
     private void RemoveSelected()
@@ -466,14 +466,14 @@ public sealed class AllowListViewModel : ObservableObject
 
         _store.Save(_document);
         Refresh();
-        Status = "Đã xoá khỏi danh sách. Bấm \"Áp dụng\" để cập nhật Windows Firewall.";
+        Status = "Đã bỏ khỏi danh sách. Bấm \"Lưu vào tường lửa\" để áp dụng.";
     }
 
     private void ApplyToFirewall()
     {
         if (!ElevationService.IsElevated)
         {
-            Status = "Cần quyền Admin để ghi rule vào Windows Firewall.";
+            Status = "Cần quyền quản trị để ghi vào tường lửa của Windows.";
             return;
         }
 
@@ -482,8 +482,8 @@ public sealed class AllowListViewModel : ObservableObject
             PolicyDiff diff = new PolicyApplier(_policyFactory()).Apply(_document);
 
             Status = diff.HasChanges
-                ? $"Đã áp dụng: thêm {diff.ToAdd.Count}, xoá {diff.ToRemove.Count}, giữ nguyên {diff.Unchanged.Count}."
-                : $"Windows Firewall đã khớp danh sách ({diff.Unchanged.Count} rule), không cần thay đổi.";
+                ? $"Đã lưu: thêm {diff.ToAdd.Count}, bỏ {diff.ToRemove.Count}, giữ nguyên {diff.Unchanged.Count}."
+                : $"Tường lửa đã khớp danh sách ({diff.Unchanged.Count} mục), không cần thay đổi gì.";
         }
         catch (UnauthorizedAccessException ex)
         {

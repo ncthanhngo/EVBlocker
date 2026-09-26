@@ -102,10 +102,10 @@ public sealed class EnforcementViewModel : ObservableObject
     public bool StartupTaskInstalled => _startupInstalled;
 
     public string StartupTaskText => _startupInstalled
-        ? "Tự áp lại khi khởi động: BẬT"
-        : "Tự áp lại khi khởi động: TẮT — rule bị xoá bên ngoài sẽ không được khôi phục";
+        ? "Tự kiểm tra lại khi mở máy: BẬT"
+        : "Tự kiểm tra lại khi mở máy: TẮT — nếu danh sách bị xoá, ứng dụng sẽ không tự đặt lại";
 
-    public string StartupToggleLabel => _startupInstalled ? "Tắt tự áp lại" : "Bật tự áp lại";
+    public string StartupToggleLabel => _startupInstalled ? "Tắt tự kiểm tra" : "Bật tự kiểm tra";
 
     public RevertOption RevertAfter
     {
@@ -121,9 +121,9 @@ public sealed class EnforcementViewModel : ObservableObject
 
     public string StateText => State switch
     {
-        EnforcementState.Off => "TẮT — mọi ứng dụng ra được internet",
+        EnforcementState.Off => "CHƯA CHẶN — mọi phần mềm đều ra được internet",
         EnforcementState.Armed => "ĐANG CHỜ XÁC NHẬN",
-        EnforcementState.On => "BẬT — chỉ allow-list ra được internet",
+        EnforcementState.On => "ĐANG CHẶN — chỉ phần mềm trong danh sách cho phép mới ra được internet",
         _ => "Không xác định",
     };
 
@@ -150,16 +150,16 @@ public sealed class EnforcementViewModel : ObservableObject
             if (_revertAt is null)
             {
                 // Armed by a previous run of the app, so the deadline is not known here.
-                return "Sẽ tự khôi phục (không rõ thời điểm — do phiên trước hẹn).";
+                return "Máy sẽ tự bỏ chặn, nhưng không rõ lúc nào — hẹn giờ do lần mở trước đặt.";
             }
 
             TimeSpan left = _revertAt.Value - DateTimeOffset.Now;
 
             return left <= TimeSpan.Zero
-                ? "Đã tới hạn — đang khôi phục."
+                ? "Đã tới giờ — đang bỏ chặn."
                 : string.Create(
                     CultureInfo.CurrentCulture,
-                    $"Tự khôi phục sau {left.Minutes:00}:{left.Seconds:00} nếu không xác nhận.");
+                    $"Tự bỏ chặn sau {left.Minutes:00}:{left.Seconds:00} nếu bạn không bấm Giữ nguyên.");
         }
     }
 
@@ -201,15 +201,15 @@ public sealed class EnforcementViewModel : ObservableObject
         {
             // Blocking with an unreadable allow-list would apply the baseline and nothing else,
             // cutting off every application the user had approved.
-            Message = $"Không đọc được allow-list, không thể bật: {ex.Message}";
+            Message = $"Không đọc được danh sách cho phép, chưa thể bắt đầu chặn: {ex.Message}";
             return;
         }
 
         if (!_confirm(
-                "Bật chặn outbound?",
-                $"Mọi ứng dụng ngoài allow-list ({allowList.Apps.Count} mục) sẽ bị chặn ra internet.\n\n"
-                + $"Cấu hình firewall hiện tại được sao lưu trước. Nếu bạn không bấm \"Giữ cấu hình\" "
-                + $"trong {_revertAfter.Label}, máy tự khôi phục lại — kể cả khi ứng dụng bị tắt hoặc máy khởi động lại.\n\n"
+                "Bắt đầu chặn internet?",
+                $"Mọi phần mềm ngoài danh sách cho phép ({allowList.Apps.Count} mục) sẽ không ra được internet.\n\n"
+                + $"Cài đặt tường lửa hiện tại được sao lưu trước. Nếu bạn không bấm \"Giữ nguyên\" "
+                + $"trong {_revertAfter.Label}, máy tự bỏ chặn — kể cả khi bạn tắt ứng dụng hoặc khởi động lại máy.\n\n"
                 + "Tiếp tục?"))
         {
             return;
@@ -219,7 +219,7 @@ public sealed class EnforcementViewModel : ObservableObject
         {
             _status = _controller.Enable(allowList, _revertAfter.Duration);
             _revertAt = DateTimeOffset.Now + _revertAfter.Duration;
-            Message = $"Đã bật. Kiểm tra mạng còn hoạt động, rồi bấm \"Giữ cấu hình\".";
+            Message = $"Đã bắt đầu chặn. Thử xem mạng còn dùng được không, rồi bấm \"Giữ nguyên\".";
         });
     }
 
@@ -228,7 +228,7 @@ public sealed class EnforcementViewModel : ObservableObject
         if (_startupInstalled)
         {
             _startupTask.Uninstall();
-            Message = "Đã tắt tự áp lại khi khởi động.";
+            Message = "Đã tắt tự kiểm tra khi mở máy.";
             return;
         }
 
@@ -242,21 +242,21 @@ public sealed class EnforcementViewModel : ObservableObject
         }
 
         _startupTask.Install(executable);
-        Message = "Đã bật. Mỗi lần khởi động máy, rule sẽ được kiểm tra và áp lại nếu bị thay đổi.";
+        Message = "Đã bật. Mỗi lần mở máy, danh sách sẽ được kiểm tra và đặt lại nếu bị thay đổi.";
     });
 
     private void ConfirmEnforcement() => Run(() =>
     {
         _status = _controller.Confirm();
         _revertAt = null;
-        Message = "Đã giữ cấu hình. Không còn khôi phục tự động.";
+        Message = "Đã giữ nguyên. Máy sẽ không tự bỏ chặn nữa.";
     });
 
     private void Disable() => Run(() =>
     {
         _status = _controller.Disable();
         _revertAt = null;
-        Message = "Đã tắt chặn outbound.";
+        Message = "Đã ngừng chặn.";
     });
 
     private void Run(Action action)

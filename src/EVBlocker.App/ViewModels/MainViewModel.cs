@@ -53,7 +53,7 @@ public sealed class MainViewModel : ObservableObject
         {
             new("Đang kết nối", "#5AA9FF", ActiveConnections),
             new("Đã thử kết nối", "#F5B93B", History),
-            new("Allow-list", "#2BD673", AllowList),
+            new("Danh sách cho phép", "#2BD673", AllowList),
             new("Phần mềm đã cài", "#B48CFF", InstalledPrograms),
             new("Cài đặt", "#94A3B8", Settings),
         };
@@ -87,8 +87,8 @@ public sealed class MainViewModel : ObservableObject
     public bool ShowElevationBanner => !ElevationService.IsElevated;
 
     public string ElevationMessage =>
-        "Đang chạy không có quyền Admin — đường dẫn của phần lớn tiến trình sẽ trống "
-        + "và không đọc được lịch sử từ Security log.";
+        "Đang chạy với quyền thường — sẽ không thấy đường dẫn của phần lớn tiến trình, "
+        + "và không đọc được nhật ký của Windows.";
 
     /// <summary>
     /// Shown in the rail. Replaced a hard-coded phase label that went stale every time a phase
@@ -97,7 +97,7 @@ public sealed class MainViewModel : ObservableObject
     public static string AppVersion =>
         $"EVBlocker {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0"}";
 
-    public string ElevationBadge => ElevationService.IsElevated ? "Administrator" : "Quyền hạn chế";
+    public string ElevationBadge => ElevationService.IsElevated ? "Quyền quản trị" : "Quyền thường";
 
     /// <summary>
     /// The two WPF-facing pieces the allow-list needs. Passed in as delegates so that view model
@@ -107,7 +107,7 @@ public sealed class MainViewModel : ObservableObject
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Chọn ứng dụng được phép ra internet",
+            Title = "Chọn phần mềm được phép ra internet",
             Filter = "Ứng dụng (*.exe)|*.exe",
             Multiselect = true,
             CheckFileExists = true,

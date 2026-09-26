@@ -36,9 +36,9 @@
 
           <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
             <CheckBox Content="Chỉ hiện kết nối ra internet" IsChecked="{Binding InternetOnly}" />
-            <CheckBox Content="Ẩn socket đang đóng" Margin="22,0,0,0"
+            <CheckBox Content="Ẩn kết nối đang đóng" Margin="22,0,0,0"
                       IsChecked="{Binding HideClosing}"
-                      ToolTip="Bỏ qua TimeWait, CloseWait, FinWait — kết nối đã kết thúc, chỉ còn socket chờ dọn" />
+                      ToolTip="Bỏ qua những kết nối đã xong, máy chỉ đang dọn nốt" />
           </StackPanel>
 
           <!-- WPF has no placeholder, so a muted TextBlock sits behind the box and hides once
@@ -46,7 +46,7 @@
           <Grid Grid.Column="2">
             <TextBox x:Name="SearchBox"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}" />
-            <TextBlock Text="Tìm theo tên app, IP hoặc PID…" IsHitTestVisible="False"
+            <TextBlock Text="Tìm theo tên, địa chỉ hoặc mã tiến trình…" IsHitTestVisible="False"
                        Margin="12,0,0,0" VerticalAlignment="Center"
                        Foreground="{DynamicResource TextMutedBrush}" FontSize="12.5">
               <TextBlock.Style>
@@ -69,7 +69,7 @@
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
           <DataGrid ItemsSource="{Binding Rows}">
             <DataGrid.Columns>
-              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="250">
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="192">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -81,11 +81,11 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
-              <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="70" />
-              <DataGridTextColumn Header="ĐÍCH" Binding="{Binding Destination}" Width="180" />
-              <DataGridTextColumn Header="CỔNG" Binding="{Binding Port}" Width="70" />
-              <DataGridTextColumn Header="GT" Binding="{Binding Protocol}" Width="60" />
-              <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding State}" Width="120" />
+              <DataGridTextColumn Header="MÃ TIẾN TRÌNH" Binding="{Binding ProcessId}" Width="118" />
+              <DataGridTextColumn Header="KẾT NỐI TỚI" Binding="{Binding Destination}" Width="150" />
+              <DataGridTextColumn Header="CỔNG" Binding="{Binding Port}" Width="60" />
+              <DataGridTextColumn Header="LOẠI" Binding="{Binding Protocol}" Width="55" />
+              <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding State}" Width="125" />
               <DataGridTextColumn Header="ĐƯỜNG DẪN" Binding="{Binding FullPath}" Width="*">
                 <DataGridTextColumn.ElementStyle>
                   <Style TargetType="TextBlock">
@@ -106,7 +106,7 @@
       <DockPanel>
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
-          <TextBlock Text="Khoảng thời gian" VerticalAlignment="Center" Margin="0,0,10,0"
+          <TextBlock Text="Xem lại trong" VerticalAlignment="Center" Margin="0,0,10,0"
                      Style="{StaticResource SecondaryText}" />
           <!-- An explicit ItemTemplate rather than DisplayMemberPath: the latter does not reach
                SelectionBoxItemTemplate through a custom ComboBox template, and the closed box
@@ -130,7 +130,7 @@
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
           <DataGrid ItemsSource="{Binding Rows}">
             <DataGrid.Columns>
-              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="250">
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="192">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -145,7 +145,7 @@
               <DataGridTextColumn Header="BỊ CHẶN" Binding="{Binding BlockedCount}" Width="90" />
               <DataGridTextColumn Header="ĐƯỢC PHÉP" Binding="{Binding AllowedCount}" Width="110" />
               <DataGridTextColumn Header="LẦN CUỐI" Binding="{Binding LastSeen}" Width="140" />
-              <DataGridTextColumn Header="ĐÍCH ĐÃ THẤY" Binding="{Binding Destinations}" Width="*">
+              <DataGridTextColumn Header="ĐÃ KẾT NỐI TỚI" Binding="{Binding Destinations}" Width="*">
                 <DataGridTextColumn.ElementStyle>
                   <Style TargetType="TextBlock">
                     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
@@ -169,13 +169,13 @@
                   Command="{Binding AddCommand}" />
           <Button Content="Quét ứng dụng đang chạy" Margin="10,0,0,0"
                   Command="{Binding ScanCommand}"
-                  ToolTip="Liệt kê mọi ứng dụng đang chạy để chọn cái nào được ra internet" />
+                  ToolTip="Xem mọi phần mềm đang chạy và chọn cái nào được ra internet" />
           <Button Content="Thêm ứng dụng phổ biến" Margin="10,0,0,0"
                   Command="{Binding AddCommonCommand}"
-                  ToolTip="Dò các ứng dụng quen thuộc đã cài trên máy và thêm vào danh sách" />
-          <Button Content="Xoá khỏi danh sách" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
-          <Button Content="Áp dụng vào Firewall" Margin="10,0,0,0" Command="{Binding ApplyCommand}"
-                  ToolTip="Ghi rule vào Windows Firewall. Cần quyền Admin." />
+                  ToolTip="Tìm các phần mềm quen thuộc đã cài trên máy và cho phép chúng" />
+          <Button Content="Bỏ cho phép" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
+          <Button Content="Lưu vào tường lửa" Margin="10,0,0,0" Command="{Binding ApplyCommand}"
+                  ToolTip="Ghi danh sách này vào tường lửa của Windows. Cần quyền quản trị." />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"
@@ -184,7 +184,7 @@
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
           <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
             <DataGrid.Columns>
-              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="250">
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="192">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -237,8 +237,8 @@
           </Grid.ColumnDefinitions>
 
           <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-            <CheckBox Content="Ẩn driver và runtime" IsChecked="{Binding HideSupportComponents}"
-                      ToolTip="Ẩn các mục như redistributable, driver, SDK — chúng không tự kết nối internet" />
+            <CheckBox Content="Ẩn driver và thành phần nền" IsChecked="{Binding HideSupportComponents}"
+                      ToolTip="Ẩn driver, bộ cài đi kèm và thành phần nền — chúng không tự ra internet" />
             <CheckBox Content="Chỉ hiện mục chưa quyết định" Margin="20,0,0,0"
                       IsChecked="{Binding UndecidedOnly}"
                       ToolTip="Phần mềm mới cài sẽ nằm ở đây" />
@@ -269,9 +269,9 @@
                      TextWrapping="Wrap" Margin="0,0,320,0" VerticalAlignment="Center" />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Đọc lại" Command="{Binding RefreshCommand}" />
-            <Button Content="Cho phép mục đã tích" Margin="10,0,0,0"
+            <Button Content="Cho phép ra internet" Margin="10,0,0,0"
                     Style="{StaticResource PrimaryButton}" Command="{Binding AllowCommand}"
-                    ToolTip="Thêm file thực thi của những mục đã tích vào allow-list" />
+                    ToolTip="Cho những phần mềm đã tích được ra internet" />
           </StackPanel>
         </Grid>
 
@@ -456,7 +456,7 @@
                   Visibility="{Binding ShowElevationBanner, Converter={StaticResource BoolToVis}}">
             <DockPanel>
               <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
-                      Content="Chạy lại với quyền Admin" VerticalAlignment="Center"
+                      Content="Chạy lại với quyền quản trị" VerticalAlignment="Center"
                       Margin="14,0,0,0" Command="{Binding RelaunchElevatedCommand}" />
               <!-- Amber carries the warning through the border, not the words. On the light
                    palette the warning colour reaches about 3.8:1 against this surface, which is
@@ -479,7 +479,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                  <TextBlock Text="CHẶN OUTBOUND" Style="{StaticResource SectionLabel}" />
+                  <TextBlock Text="CHẶN INTERNET" Style="{StaticResource SectionLabel}" />
                   <TextBlock Text="{Binding StateText}" Margin="0,4,0,0" FontWeight="SemiBold">
                     <TextBlock.Style>
                       <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
@@ -501,7 +501,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
                               Visibility="{Binding ShowEnableControls, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Tự khôi phục sau" VerticalAlignment="Center" Margin="0,0,8,0"
+                    <TextBlock Text="Tự bỏ chặn sau" VerticalAlignment="Center" Margin="0,0,8,0"
                                Style="{StaticResource MutedText}" />
                     <ComboBox Width="110" VerticalAlignment="Center"
                               ItemsSource="{x:Static vm:EnforcementViewModel.RevertOptions}"
@@ -512,15 +512,15 @@
                         </DataTemplate>
                       </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Content="Bật chặn outbound" Margin="10,0,0,0"
+                    <Button Content="Bắt đầu chặn" Margin="10,0,0,0"
                             Style="{StaticResource PrimaryButton}" Command="{Binding EnableCommand}" />
                   </StackPanel>
 
-                  <Button Content="Giữ cấu hình" Style="{StaticResource PrimaryButton}"
+                  <Button Content="Giữ nguyên" Style="{StaticResource PrimaryButton}"
                           Command="{Binding ConfirmCommand}"
                           Visibility="{Binding ShowArmedControls, Converter={StaticResource BoolToVis}}" />
 
-                  <Button Content="Tắt chặn" Margin="10,0,0,0" Command="{Binding DisableCommand}" />
+                  <Button Content="Ngừng chặn" Margin="10,0,0,0" Command="{Binding DisableCommand}" />
                 </StackPanel>
               </Grid>
 

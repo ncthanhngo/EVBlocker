@@ -66,8 +66,8 @@ public sealed class HistoryViewModel : ObservableObject
         _refreshCommand = new RelayCommand(() => _ = RefreshAsync(), () => !_isBusy);
 
         _status = ElevationService.IsElevated
-            ? "Bấm Tải lại để đọc nhật ký."
-            : "Cần quyền Admin để đọc Security log.";
+            ? "Bấm Tải lại để xem."
+            : "Cần quyền quản trị để đọc nhật ký của Windows.";
     }
 
     public sealed record LookbackOption(string Label, TimeSpan Duration);
@@ -132,20 +132,20 @@ public sealed class HistoryViewModel : ObservableObject
             Status = Rows.Count == 0
                 // An empty result is ambiguous, so name the likely cause rather than leaving the
                 // user staring at a blank grid.
-                ? "Không có sự kiện nào. Nhật ký chỉ có dữ liệu sau khi bật audit policy."
+                ? "Chưa có gì. Windows chỉ ghi lại sau khi bạn bật ghi nhật ký — xem hướng dẫn sử dụng."
                 : string.Create(CultureInfo.CurrentCulture, $"{Rows.Count} ứng dụng trong {lookback.Label.ToLowerInvariant()}.");
         }
         catch (UnauthorizedAccessException)
         {
-            Status = "Không đọc được Security log: cần chạy với quyền Admin.";
+            Status = "Không đọc được nhật ký: cần chạy với quyền quản trị.";
         }
         catch (System.Diagnostics.Eventing.Reader.EventLogException ex)
         {
-            Status = $"Không đọc được Security log: {ex.Message}";
+            Status = $"Không đọc được nhật ký của Windows: {ex.Message}";
         }
         catch (Exception ex)
         {
-            Status = $"Lỗi khi đọc nhật ký: {ex.Message}";
+            Status = $"Không đọc được nhật ký: {ex.Message}";
         }
         finally
         {

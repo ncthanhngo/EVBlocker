@@ -9,24 +9,24 @@ file duy nhất, **không cần cài .NET**.
 
 File chưa được ký số nên SmartScreen sẽ cảnh báo ở lần chạy đầu: bấm **More info → Run anyway**.
 
-## Quyền Admin
+## Quyền quản trị
 
-| Việc | Cần Admin? |
+| Việc | Cần quyền quản trị? |
 |---|---|
 | Xem ứng dụng đang kết nối | Không |
 | Xem **đường dẫn** của tiến trình | Có |
-| Đọc lịch sử từ Security log | Có |
-| Thêm/xoá app trong allow-list (chỉ lưu file) | Không |
-| **Áp dụng** allow-list vào firewall | Có |
-| Bật/tắt chặn outbound | Có |
-| Bật tự áp lại khi khởi động | Có |
+| Đọc lịch sử từ nhật ký Windows | Có |
+| Thêm/bỏ phần mềm trong danh sách cho phép (chỉ lưu file) | Không |
+| **Lưu** danh sách cho phép vào tường lửa | Có |
+| Bắt đầu chặn / ngừng chặn | Có |
+| Bật tự kiểm tra lại khi mở máy | Có |
 
-Ứng dụng mở ở quyền thường và có nút **Chạy lại với quyền Admin** khi cần. Nó không bắt bạn qua
+Ứng dụng mở ở quyền thường và có nút **Chạy lại với quyền quản trị** khi cần. Nó không bắt bạn qua
 UAC mỗi lần mở chỉ để xem danh sách kết nối.
 
 ## Quy trình khuyến nghị
 
-Bật chặn outbound mà chưa biết máy cần gì là cách nhanh nhất để mất mạng. Làm theo thứ tự:
+Bắt đầu chặn khi chưa biết máy cần gì là cách nhanh nhất để mất mạng. Làm theo thứ tự:
 
 ### 1. Quan sát trước
 
@@ -43,9 +43,9 @@ Chỉ bật `/failure` (event 5157 — bị chặn). Bật thêm `/success` sinh
 
 Dùng máy vài ngày như bình thường, rồi xem tab **Đã thử kết nối**.
 
-### 2. Dựng allow-list
+### 2. Dựng danh sách cho phép
 
-Một số ứng dụng **tự có sẵn trong allow-list** mỗi lần mở ứng dụng, không cần bấm gì. Danh mục
+Một số ứng dụng **tự có sẵn trong danh sách cho phép** mỗi lần mở ứng dụng, không cần bấm gì. Danh mục
 hướng vào máy trạm lập trình:
 
 | Nhóm | Ứng dụng |
@@ -63,25 +63,26 @@ trường hợp `winget` nói ở phần giới hạn. Danh mục chỉ dò đư
 
 **Git cần ba file, không phải một.** `cmd\git.exe` chỉ là shim 47 KB; client thật nằm ở
 `mingw64\bin\git.exe`, còn việc tải/đẩy qua HTTPS do một file riêng `git-remote-https.exe` làm.
-Chỉ cho phép file trên PATH thì `git clone https://...` vẫn bị chặn trong khi allow-list trông
+Chỉ cho phép file trên PATH thì `git clone https://...` vẫn bị chặn trong khi danh sách cho phép trông
 như đã đúng.
 
 Chỉ những cái **thật sự đã cài trên máy** mới được thêm. Không thấy một cái trong danh sách nghĩa
-là máy chưa cài nó — tạo rule trỏ vào file không tồn tại thì Windows vẫn nhận, và allow-list trông
+là máy chưa cài nó — tạo rule trỏ vào file không tồn tại thì Windows vẫn nhận, và danh sách cho phép trông
 như đúng trong khi không cho phép gì cả.
 
 Gỡ một ứng dụng khỏi danh sách là **quyết định vĩnh viễn**: nó được ghi lại trong `allowlist.json`
 nên lần mở sau không bị thêm lại. Muốn lấy lại thì bấm **Thêm ứng dụng phổ biến**.
 
-### Tab "Phần mềm đã cài"
+### Mục "Phần mềm đã cài"
 
 Liệt kê đúng những gì Control Panel → Programs hiển thị, đọc từ cùng ba nhánh registry, nên phần
 mềm vừa cài xong đã có mặt ngay lần mở kế tiếp — không có gì phải làm mới hay đồng bộ.
 
-Tích phần mềm nào thì file thực thi của nó vào allow-list. Bộ lọc **Chỉ hiện mục chưa quyết định**
-là chỗ phần mềm mới cài rơi vào. **Ẩn driver và runtime** bật sẵn vì các mục kiểu redistributable,
-driver, SDK chiếm phần lớn danh sách và không tự kết nối internet; số mục đang ẩn luôn hiện ở
-thanh dưới. Thành phần của Windows không cần quyết định gì — baseline đã lo theo tên service.
+Tích phần mềm nào thì file chạy của nó vào danh sách cho phép. Bộ lọc **Chỉ hiện mục chưa quyết định**
+là chỗ phần mềm mới cài rơi vào. **Ẩn driver và thành phần nền** bật sẵn vì driver, bộ cài đi kèm và
+thành phần nền chiếm phần lớn danh sách và không tự ra internet; số mục đang ẩn luôn hiện ở
+thanh dưới. Thành phần của Windows không cần quyết định gì — ứng dụng đã tự cho phép các dịch vụ hệ
+thống cần thiết.
 
 **Một mục gỡ cài đặt mô tả *phần mềm*, còn firewall cần *file .exe*, và registry không phải lúc
 nào cũng bắc được cầu đó.** Đo trên một máy thật: 35 phần mềm, 16 xác định được file, 19 không.
@@ -98,7 +99,7 @@ Hai chỗ dễ sai đã được xử lý, nhưng nên biết:
 Git vẫn là ngoại lệ: mục Git ở đây chỉ ra các launcher trong thư mục gốc, không ra
 `git-remote-https.exe`. Dùng danh mục mặc định cho Git, đừng dựa vào màn hình này.
 
-Thêm thủ công, tab **Allow-list** có ba cách:
+Thêm thủ công, mục **Danh sách cho phép** có ba cách:
 
 - **Quét ứng dụng đang chạy** — liệt kê mọi ứng dụng đang chạy trên máy, tích cái nào được ra
   internet. Cái đang có kết nối được tích sẵn và xếp lên đầu. Thành phần trong thư mục Windows
@@ -108,31 +109,31 @@ Thêm thủ công, tab **Allow-list** có ba cách:
   hoặc muốn lấy lại cái đã gỡ.
 - **Thêm ứng dụng…** — tự chọn file `.exe`.
 
-**Không cần tạo rule chặn cho những app không tích.** Khi bật chặn outbound, mọi thứ không có
-rule cho phép đều bị chặn. Một danh sách chặn tường minh còn yếu hơn: phần mềm cài sau lần quét
-sẽ không nằm trong đó, và sẽ được cho qua.
+**Không cần tạo danh sách chặn riêng.** Khi bạn bắt đầu chặn, mọi thứ không nằm trong danh sách
+cho phép đều bị chặn. Một danh sách chặn tường minh còn yếu hơn: phần mềm cài sau lần quét sẽ
+không nằm trong đó, và sẽ được cho qua.
 
-Lưu ý khi quét không có quyền Admin: Windows chỉ cho đọc đường dẫn của khoảng một nửa số tiến
-trình. Dialog hiện rõ tỉ lệ đọc được; muốn danh sách đầy đủ thì chạy lại với quyền Admin.
+Lưu ý khi quét không có quyền quản trị: Windows chỉ cho đọc đường dẫn của khoảng một nửa số tiến
+trình. Dialog hiện rõ tỉ lệ đọc được; muốn danh sách đầy đủ thì chạy lại với quyền quản trị.
 
-Nhiều ứng dụng có nhiều file thực thi (launcher, updater, tiến trình con). Tab **Đang kết nối**
+Nhiều ứng dụng có nhiều file thực thi (launcher, updater, tiến trình con). Mục **Đang kết nối**
 cho biết file nào thật sự mở kết nối.
 
 Muốn bổ sung ứng dụng vào danh mục dò thì tạo file ghi đè (xem bảng đường dẫn bên dưới) theo cấu
 trúc của danh mục gốc; đường dẫn dùng được biến môi trường và một `*` cho mỗi đoạn — cần thiết
 cho phần mềm cài vào thư mục đặt tên theo phiên bản.
 
-Bấm **Áp dụng vào Firewall** để ghi rule. Chưa bật chặn thì rule này chưa có tác dụng gì.
+Bấm **Lưu vào tường lửa** để ghi danh sách. Chưa bắt đầu chặn thì việc này chưa có tác dụng gì.
 
-### 3. Bật chặn
+### 3. Bắt đầu chặn
 
-Ở thanh trên cùng: chọn thời gian tự khôi phục rồi bấm **Bật chặn outbound**.
+Ở thanh trên cùng: chọn thời gian tự bỏ chặn rồi bấm **Bắt đầu chặn**.
 
 Ứng dụng sẽ, theo đúng thứ tự:
 
 1. Sao lưu toàn bộ cấu hình firewall hiện tại
-2. Ghi baseline của Windows + allow-list của bạn
-3. **Hẹn giờ tự khôi phục**
+2. Ghi các dịch vụ hệ thống Windows cần + danh sách cho phép của bạn
+3. **Hẹn giờ tự bỏ chặn**
 4. Rồi mới chặn
 
 Chặn là bước cuối cùng, sau khi đường lui đã tồn tại.
@@ -141,11 +142,11 @@ Chặn là bước cuối cùng, sau khi đường lui đã tồn tại.
 
 Kiểm mạng còn chạy: duyệt web, Windows Update, và các ứng dụng bạn đã cho phép.
 
-- **Ổn** → bấm **Giữ cấu hình**. Hẹn giờ khôi phục bị huỷ.
-- **Không ổn** → bấm **Tắt chặn**, hoặc chỉ cần đợi. Máy tự khôi phục kể cả khi bạn tắt ứng
+- **Ổn** → bấm **Giữ nguyên**. Hẹn giờ tự bỏ chặn bị huỷ.
+- **Không ổn** → bấm **Ngừng chặn**, hoặc chỉ cần đợi. Máy tự bỏ chặn kể cả khi bạn tắt ứng
   dụng, kill tiến trình, hoặc khởi động lại máy.
 
-## Tự khôi phục hoạt động thế nào
+## Tự bỏ chặn hoạt động thế nào
 
 Nó là một **scheduled task chạy dưới SYSTEM**, không phải bộ đếm trong ứng dụng. Bộ đếm trong
 ứng dụng sẽ chết cùng ứng dụng — đúng vào lúc cần nó nhất.
@@ -158,7 +159,7 @@ Nếu ứng dụng không phải bên hẹn giờ (ví dụ bạn đã đóng r�
 đang chờ nhưng **không biết chính xác lúc nào** — và nó nói thẳng điều đó thay vì bịa ra một con
 số đếm ngược.
 
-## Tự áp lại khi khởi động
+## Tự kiểm tra lại khi mở máy
 
 Bật ở thanh trên cùng. Nó đăng ký một task chạy lúc khởi động để kiểm tra rule có bị thay đổi
 không, và áp lại nếu có.
@@ -179,9 +180,9 @@ mò điều đó lúc khởi động không phải việc của nó.
 
 | Đường dẫn | Nội dung |
 |---|---|
-| `%ProgramData%\EVBlocker\allowlist.json` | Allow-list (toàn máy) |
-| `%ProgramData%\EVBlocker\baseline-allow.json` | Ghi đè baseline, nếu bạn tạo |
-| `%ProgramData%\EVBlocker\known-apps.json` | Ghi đè danh mục ứng dụng phổ biến, nếu bạn tạo |
+| `%ProgramData%\EVBlocker\allowlist.json` | Danh sách cho phép (dùng chung cho cả máy) |
+| `%ProgramData%\EVBlocker\baseline-allow.json` | Ghi đè danh sách dịch vụ hệ thống, nếu bạn tạo |
+| `%ProgramData%\EVBlocker\known-apps.json` | Ghi đè danh mục phần mềm quen thuộc, nếu bạn tạo |
 | `%ProgramData%\EVBlocker\backups\*.wfw` | Bản sao lưu firewall, giữ 10 bản mới nhất |
 | `%ProgramData%\EVBlocker\reconcile.log` | Nhật ký của lần chạy lúc khởi động |
 | `%LOCALAPPDATA%\EVBlocker\settings.json` | Giao diện sáng/tối (riêng từng người dùng) |
@@ -264,7 +265,7 @@ trợ.
 
 **UDP không thấy được đích ở tab Đang kết nối.** Windows không cung cấp địa chỉ đích trong bảng
 UDP, kể cả với socket đã kết nối. Nghĩa là QUIC/HTTP3 và DNS không xác định được đích bằng cách
-quét. Tab **Đã thử kết nối** thì có — event 5156/5157 *có* kèm địa chỉ đích cho UDP.
+quét. Mục **Đã thử kết nối** thì có — event 5156/5157 *có* kèm địa chỉ đích cho UDP.
 
 ## Cập nhật
 

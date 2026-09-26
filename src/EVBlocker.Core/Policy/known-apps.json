@@ -86,7 +86,7 @@
       ]
     },
     {
-      "name": "Git - truyen qua HTTPS",
+      "name": "Git (tải qua HTTPS)",
       "candidates": [
         "%ProgramFiles%\\Git\\mingw64\\libexec\\git-core\\git-remote-https.exe",
         "%ProgramFiles(x86)%\\Git\\mingw64\\libexec\\git-core\\git-remote-https.exe",
@@ -94,7 +94,7 @@
       ]
     },
     {
-      "name": "Git - truyen qua SSH",
+      "name": "Git (tải qua SSH)",
       "candidates": [
         "%ProgramFiles%\\Git\\usr\\bin\\ssh.exe",
         "%LOCALAPPDATA%\\Programs\\Git\\usr\\bin\\ssh.exe"
@@ -250,7 +250,7 @@
       ]
     },
     {
-      "name": "Microsoft Teams (classic)",
+      "name": "Microsoft Teams (bản cũ)",
       "candidates": [
         "%LOCALAPPDATA%\\Microsoft\\Teams\\current\\Teams.exe"
       ]

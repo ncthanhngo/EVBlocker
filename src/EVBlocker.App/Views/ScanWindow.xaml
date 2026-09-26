@@ -44,7 +44,7 @@
 
       <TextBlock DockPanel.Dock="Top" Margin="0,8,0,14" TextWrapping="Wrap"
                  Style="{StaticResource MutedText}"
-                 Text="Tích những ứng dụng được phép ra internet. Mọi thứ không tích sẽ bị chặn khi bạn bật chặn outbound — không cần tạo rule chặn riêng." />
+                 Text="Tích những phần mềm được phép ra internet. Thứ gì không tích sẽ bị chặn khi bạn bắt đầu chặn — bạn không phải tạo danh sách chặn riêng." />
 
       <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
         <Grid.ColumnDefinitions>
@@ -54,8 +54,8 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-          <CheckBox Content="Ẩn thành phần Windows" IsChecked="{Binding HideWindowsComponents}"
-                    ToolTip="Các file trong thư mục Windows. Cho phép chúng theo đường dẫn hầu như luôn sai — baseline đã lo phần này theo tên service." />
+          <CheckBox Content="Ẩn thành phần của Windows" IsChecked="{Binding HideWindowsComponents}"
+                    ToolTip="Các file của chính Windows. Ứng dụng đã tự cho phép những dịch vụ hệ thống cần thiết, nên bạn không phải chọn ở đây." />
           <CheckBox Content="Chỉ hiện app đang ra internet" Margin="20,0,0,0"
                     IsChecked="{Binding OnlyConnected}" />
         </StackPanel>
@@ -86,7 +86,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
           <Button Content="Quét lại" Command="{Binding RescanCommand}" />
           <Button Content="Huỷ" Margin="10,0,0,0" Click="OnCancel" />
-          <Button Content="Thêm vào allow-list" Margin="10,0,0,0"
+          <Button Content="Cho phép ra internet" Margin="10,0,0,0"
                   Style="{StaticResource PrimaryButton}" Click="OnAccept" />
         </StackPanel>
       </Grid>
