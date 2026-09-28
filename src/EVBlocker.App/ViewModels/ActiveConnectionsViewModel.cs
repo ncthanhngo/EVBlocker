@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Threading;
 using EVBlocker.App.Mvvm;
+using EVBlocker.App.Services;
 using EVBlocker.Core.Monitor;
 
 namespace EVBlocker.App.ViewModels;
@@ -35,16 +36,21 @@ public sealed class ActiveConnectionsViewModel : ObservableObject
     private string _searchText = string.Empty;
     private string _summary = "Đang tải…";
 
-    public ActiveConnectionsViewModel(IConnectionScanner scanner)
+    public ActiveConnectionsViewModel(IConnectionScanner scanner, AppAccessActions actions)
     {
         ArgumentNullException.ThrowIfNull(scanner);
+        ArgumentNullException.ThrowIfNull(actions);
         _scanner = scanner;
+        Actions = actions;
 
         _timer = new DispatcherTimer { Interval = PollInterval };
         _timer.Tick += (_, _) => Refresh();
     }
 
     public ObservableCollection<ConnectionRowViewModel> Rows { get; } = new();
+
+    /// <summary>Allow or revoke internet access for the selected row's executable.</summary>
+    public AppAccessActions Actions { get; }
 
     /// <summary>
     /// On by default: the product is about internet access, and unfiltered the grid is mostly
@@ -141,6 +147,7 @@ public sealed class ActiveConnectionsViewModel : ObservableObject
 
         return (record.ExecutablePath?.Contains(needle, StringComparison.OrdinalIgnoreCase) ?? false)
                || (record.Remote?.ToString().Contains(needle, StringComparison.OrdinalIgnoreCase) ?? false)
+               || ExecutableDescriptions.Get(record.ExecutablePath).Product.Contains(needle, StringComparison.OrdinalIgnoreCase)
                || record.ProcessId.ToString(CultureInfo.InvariantCulture).Contains(needle, StringComparison.Ordinal);
     }
 

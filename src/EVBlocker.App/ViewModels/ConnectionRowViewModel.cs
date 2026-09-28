@@ -1,9 +1,10 @@
+using EVBlocker.App.Services;
 using EVBlocker.Core.Monitor;
 
 namespace EVBlocker.App.ViewModels;
 
 /// <summary>Display projection of one <see cref="ConnectionRecord"/>.</summary>
-public sealed class ConnectionRowViewModel
+public sealed class ConnectionRowViewModel : IAppRow
 {
     public ConnectionRowViewModel(ConnectionRecord record)
     {
@@ -28,6 +29,12 @@ public sealed class ConnectionRowViewModel
             var r => System.IO.Path.GetFileName(r.ExecutablePath!),
         };
 
+        SoftwareDescription software = record.ProcessId == 4
+            ? new SoftwareDescription("Windows", "Microsoft")
+            : ExecutableDescriptions.Get(record.ExecutablePath);
+        Software = software.Product;
+        Publisher = software.Publisher;
+
         Destination = record.Remote is null ? "—" : record.Remote.Address.ToString();
         Port = record.Remote?.Port.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "—";
         State = Describe(record.State);
@@ -38,6 +45,12 @@ public sealed class ConnectionRowViewModel
     public string Key { get; }
 
     public string AppName { get; }
+
+    /// <summary>The product the executable belongs to, from its version resource.</summary>
+    public string Software { get; }
+
+    public string Publisher { get; }
+    public string SoftwareTooltip => $"{Software}\nNhà phát hành: {Publisher}";
     public string? FullPath { get; }
     public int ProcessId { get; }
     public string Protocol { get; }

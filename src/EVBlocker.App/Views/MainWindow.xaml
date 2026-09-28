@@ -1,4 +1,4 @@
-<Window x:Class="EVBlocker.App.Views.MainWindow"
+﻿<Window x:Class="EVBlocker.App.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -58,7 +58,7 @@
           <Grid Grid.Column="2">
             <TextBox x:Name="SearchBox"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}" />
-            <TextBlock Text="Tìm theo tên, địa chỉ hoặc mã tiến trình…" IsHitTestVisible="False"
+            <TextBlock Text="Tìm theo tên, phần mềm, địa chỉ hoặc mã tiến trình…" IsHitTestVisible="False"
                        Margin="12,0,0,0" VerticalAlignment="Center"
                        Foreground="{DynamicResource TextMutedBrush}" FontSize="12.5">
               <TextBlock.Style>
@@ -75,13 +75,26 @@
           </Grid>
         </Grid>
 
+        <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextPrimaryBrush}" Text="{Binding Actions.Message}"
+                   Visibility="{Binding Actions.HasMessage, Converter={StaticResource BoolToVis}}" />
+
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0"
                    Style="{StaticResource MutedText}" Text="{Binding Summary}" />
 
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
-          <DataGrid ItemsSource="{Binding Rows}">
+          <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Actions.Selected}"
+                    ContextMenuOpening="OnRowMenuOpening">
+            <!-- Right-click on a row: the decision the page exists to prompt. The DataGrid selects
+                 the row under the pointer before the menu opens, so the commands act on it. -->
+            <DataGrid.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Cho phép kết nối internet" Command="{Binding Actions.AllowCommand}" />
+                <MenuItem Header="Hủy kết nối internet" Command="{Binding Actions.RevokeCommand}" />
+              </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
-              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="192">
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="160">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -93,6 +106,16 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
+              <!-- The product the file belongs to; the publisher rides in the tooltip rather than a
+                   column of its own, which pushed the port and protocol off the grid. -->
+              <DataGridTextColumn Header="PHẦN MỀM" Binding="{Binding Software}" Width="170">
+                <DataGridTextColumn.ElementStyle>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                    <Setter Property="ToolTip" Value="{Binding SoftwareTooltip}" />
+                  </Style>
+                </DataGridTextColumn.ElementStyle>
+              </DataGridTextColumn>
               <DataGridTextColumn Header="MÃ TIẾN TRÌNH" Binding="{Binding ProcessId}" Width="118" />
               <DataGridTextColumn Header="KẾT NỐI TỚI" Binding="{Binding Destination}" Width="150" />
               <DataGridTextColumn Header="CỔNG" Binding="{Binding Port}" Width="60" />
@@ -153,13 +176,26 @@
           </DockPanel>
         </Border>
 
+        <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextPrimaryBrush}" Text="{Binding Actions.Message}"
+                   Visibility="{Binding Actions.HasMessage, Converter={StaticResource BoolToVis}}" />
+
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0"
                    Style="{StaticResource MutedText}" Text="{Binding Status}" />
 
         <Border Style="{StaticResource Card}" Padding="4,0,4,4">
-          <DataGrid ItemsSource="{Binding Rows}">
+          <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Actions.Selected}"
+                    ContextMenuOpening="OnRowMenuOpening">
+            <!-- Right-click on a row: the decision the page exists to prompt. The DataGrid selects
+                 the row under the pointer before the menu opens, so the commands act on it. -->
+            <DataGrid.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Cho phép kết nối internet" Command="{Binding Actions.AllowCommand}" />
+                <MenuItem Header="Hủy kết nối internet" Command="{Binding Actions.RevokeCommand}" />
+              </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
-              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="192">
+              <DataGridTemplateColumn Header="ỨNG DỤNG" Width="160">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -171,6 +207,16 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
+              <!-- The product the file belongs to; the publisher rides in the tooltip rather than a
+                   column of its own, which pushed the port and protocol off the grid. -->
+              <DataGridTextColumn Header="PHẦN MỀM" Binding="{Binding Software}" Width="170">
+                <DataGridTextColumn.ElementStyle>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                    <Setter Property="ToolTip" Value="{Binding SoftwareTooltip}" />
+                  </Style>
+                </DataGridTextColumn.ElementStyle>
+              </DataGridTextColumn>
               <DataGridTextColumn Header="BỊ CHẶN" Binding="{Binding BlockedCount}" Width="90" />
               <DataGridTextColumn Header="ĐƯỢC PHÉP" Binding="{Binding AllowedCount}" Width="110" />
               <DataGridTextColumn Header="LẦN CUỐI" Binding="{Binding LastSeen}" Width="140" />

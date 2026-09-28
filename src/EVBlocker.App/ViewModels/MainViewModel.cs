@@ -19,14 +19,6 @@ public sealed class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        ActiveConnections = new ActiveConnectionsViewModel(new ActiveConnectionScanner());
-
-        // Built per read rather than held: the device map inside it refreshes on a miss, and a
-        // long-lived instance would keep a map from whenever the app happened to start.
-        History = new HistoryViewModel(
-            () => new WfpEventLogReader(new DevicePathMapper()),
-            () => new AuditPolicyManager());
-
         // Dot colours come from the shared palette's nav set, so a section here reads as the
         // same kind of thing as a section in the other EVSELab apps.
         AllowListStore store = CoreServices.CreateAllowListStore();
@@ -38,6 +30,15 @@ public sealed class MainViewModel : ObservableObject
             PickRunningApps,
             PickInstalledApps,
             Confirm);
+
+        ActiveConnections = new ActiveConnectionsViewModel(new ActiveConnectionScanner(), CreateAccessActions());
+
+        // Built per read rather than held: the device map inside it refreshes on a miss, and a
+        // long-lived instance would keep a map from whenever the app happened to start.
+        History = new HistoryViewModel(
+            () => new WfpEventLogReader(new DevicePathMapper()),
+            () => new AuditPolicyManager(),
+            CreateAccessActions());
 
         Monitor = new MonitorViewModel(ActiveConnections, History);
 
@@ -189,6 +190,41 @@ public sealed class MainViewModel : ObservableObject
 
         return window.ShowDialog() == true ? window.Selected : null;
     }
+
+    /// <summary>
+    /// The right-click choices on the monitoring page, both ending in the allow-list.
+    /// </summary>
+    /// <remarks>
+    /// Revoking cuts the program's open connections as well, after the firewall has been written,
+    /// so that its reconnect is the attempt that gets refused. That only makes sense while
+    /// blocking is on - with it off every program reaches the internet whatever the list says -
+    /// so then the result says so instead of cutting connections that would come straight back.
+    /// </remarks>
+    private AppAccessActions CreateAccessActions() => new(
+        (path, name) => AllowList.AllowNow(path, name),
+        path =>
+        {
+            (bool applied, string message) = AllowList.RevokeNow(path);
+
+            if (Enforcement.State == EnforcementState.Off)
+            {
+                return message + " Lưu ý: chặn đang tắt nên nó vẫn ra được internet cho tới khi bật chặn.";
+            }
+
+            if (!applied)
+            {
+                return message;
+            }
+
+            CloseResult cut = new TcpConnectionCloser(new ActiveConnectionScanner()).CloseAll(path);
+            return cut switch
+            {
+                { Failed: > 0 } => message + $" Không cắt được {cut.Failed} kết nối đang mở.",
+                { Closed: > 0 } => message + $" Đã cắt {cut.Closed} kết nối đang mở.",
+                _ => message,
+            };
+        },
+        path => AllowList.IsAllowed(path));
 
     private static bool Confirm(string title, string message) =>
         System.Windows.MessageBox.Show(

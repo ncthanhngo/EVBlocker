@@ -140,6 +140,17 @@ trình. Dialog hiện rõ tỉ lệ đọc được; muốn danh sách đầy đ
 Nhiều ứng dụng có nhiều file chạy (launcher, updater, tiến trình con). **Theo dõi → Đang kết
 nối** cho biết file nào thật sự mở kết nối.
 
+Ở cả hai tab của **Theo dõi**, cột **Phần mềm** cho biết file đó thuộc phần mềm nào (đọc từ thông
+tin trong file); di chuột vào để xem nhà phát hành. Bấm chuột phải vào một dòng để chọn:
+
+- **Cho phép kết nối internet** — thêm file vào danh sách cho phép và ghi ngay vào tường lửa.
+- **Hủy kết nối internet** — bỏ file khỏi danh sách cho phép, ghi ngay vào tường lửa rồi cắt luôn
+  các kết nối TCP đang mở của nó, nên việc đang tải dở cũng dừng. Chỉ có tác dụng khi đang chặn.
+  Windows chỉ cho cắt kết nối IPv4; kết nối IPv6 do tường lửa chặn.
+
+Cần quyền quản trị để ghi vào tường lửa. Mục nào không đọc được đường dẫn (System, tiến trình đã
+kết thúc, hoặc chạy không có quyền quản trị) thì không chọn được.
+
 Muốn bổ sung ứng dụng vào danh mục dò thì tạo file ghi đè (xem bảng đường dẫn bên dưới) theo cấu
 trúc của danh mục gốc; đường dẫn dùng được biến môi trường và một `*` cho mỗi đoạn — cần thiết
 cho phần mềm cài vào thư mục đặt tên theo phiên bản.

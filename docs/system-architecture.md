@@ -6,7 +6,7 @@ Dành cho người bảo trì. Hướng dẫn cho người dùng ở [huong-dan-
 
 ```
 src/EVBlocker.Core/     class library — không phụ thuộc UI, unit test được
-  Monitor/    quét socket đang mở (P/Invoke iphlpapi), liệt kê ứng dụng đang chạy
+  Monitor/    quét socket đang mở (P/Invoke iphlpapi), liệt kê ứng dụng đang chạy, cắt kết nối TCP của một exe
   History/    đọc event WFP 5157/5156, map path kernel sang ổ đĩa
   Installed/  đọc danh sách phần mềm đã cài từ registry gỡ cài đặt
   Usb/        dò ổ USB theo bus, đọc .lnk, quy tắc phát hiện virus USB, cách ly

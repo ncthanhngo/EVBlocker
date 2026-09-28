@@ -112,7 +112,7 @@ public sealed class AllowListViewModel : ObservableObject
         _scanCommand = new RelayCommand(ScanRunningApps, () => !_loadFailed);
         _installedCommand = new RelayCommand(PickInstalled, () => !_loadFailed);
         _removeCommand = new RelayCommand(RemoveSelected, () => _selected is not null && !_loadFailed);
-        _applyCommand = new RelayCommand(ApplyToFirewall, () => !_loadFailed);
+        _applyCommand = new RelayCommand(Apply, () => !_loadFailed);
 
         Reload();
     }
@@ -478,28 +478,106 @@ public sealed class AllowListViewModel : ObservableObject
             return;
         }
 
-        string removed = _selected.Source.ExecutablePath;
-        _document.Apps.Remove(_selected.Source);
-
-        // Recorded so the catalogue does not seed it back at the next load. Without this a
-        // default could be removed but never stay removed.
-        if (!_document.RemovedDefaults.Any(
-                path => string.Equals(path, removed, StringComparison.OrdinalIgnoreCase)))
-        {
-            _document.RemovedDefaults.Add(removed);
-        }
-
+        RemoveEntry(_selected.Source);
         _store.Save(_document);
         Refresh();
         Status = "Đã bỏ khỏi danh sách. Bấm \"Lưu vào tường lửa\" để áp dụng.";
     }
 
-    private void ApplyToFirewall()
+    private void RemoveEntry(AllowedApp app)
+    {
+        _document.Apps.Remove(app);
+
+        // Recorded so the catalogue does not seed it back at the next load. Without this a
+        // default could be removed but never stay removed.
+        if (!_document.RemovedDefaults.Any(
+                path => string.Equals(path, app.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
+        {
+            _document.RemovedDefaults.Add(app.ExecutablePath);
+        }
+    }
+
+    /// <summary>Whether <paramref name="executablePath"/> is on the list.</summary>
+    public bool IsAllowed(string executablePath) =>
+        _document.Apps.Any(a => string.Equals(a.ExecutablePath, executablePath, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Allows one executable and writes the list to the firewall at once. Returns what happened.
+    /// </summary>
+    /// <remarks>
+    /// Reached from a right-click on the monitoring page. Unlike adding on this page, it does not
+    /// wait for "Lưu vào tường lửa": the person is looking at a program being refused right now,
+    /// and a second step on another page is one they would not know to take.
+    /// </remarks>
+    public string AllowNow(string executablePath, string displayName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+
+        if (_loadFailed)
+        {
+            return Status;
+        }
+
+        if (!IsAllowed(executablePath)
+            && AddApps(new[] { new ScannedSelection(displayName, executablePath) }) == 0)
+        {
+            return $"Chưa cho phép {displayName}.";
+        }
+
+        return ApplyToFirewall()
+            ? $"Đã cho phép {displayName} kết nối internet."
+            : $"Đã thêm {displayName} vào danh sách cho phép, nhưng chưa ghi được vào tường lửa: {Status}";
+    }
+
+    /// <summary>
+    /// Takes one executable off the list and writes the list to the firewall at once.
+    /// </summary>
+    /// <remarks>
+    /// There is no block rule to add: once off the list, default-deny refuses it. That also means
+    /// it does nothing while blocking is switched off, which the caller says.
+    /// </remarks>
+    /// <returns>Whether the firewall now refuses it, and what happened in words.</returns>
+    public (bool Applied, string Message) RevokeNow(string executablePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+
+        if (_loadFailed)
+        {
+            return (false, Status);
+        }
+
+        string name = System.IO.Path.GetFileName(executablePath);
+        List<AllowedApp> entries = _document.Apps
+            .Where(a => string.Equals(a.ExecutablePath, executablePath, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (entries.Count == 0)
+        {
+            return (false, $"{name} không có trong danh sách cho phép.");
+        }
+
+        foreach (AllowedApp app in entries)
+        {
+            RemoveEntry(app);
+        }
+
+        _store.Save(_document);
+        Refresh();
+
+        return ApplyToFirewall()
+            ? (true, $"Đã hủy kết nối internet của {name}.")
+            : (false, $"Đã bỏ {name} khỏi danh sách cho phép, nhưng chưa ghi được vào tường lửa: {Status}");
+    }
+
+    private void Apply() => ApplyToFirewall();
+
+    /// <summary>Writes the list into Windows Firewall. Returns false and sets Status on failure.</summary>
+    private bool ApplyToFirewall()
     {
         if (!ElevationService.IsElevated)
         {
             Status = "Cần quyền quản trị để ghi vào tường lửa của Windows.";
-            return;
+            return false;
         }
 
         try
@@ -509,6 +587,7 @@ public sealed class AllowListViewModel : ObservableObject
             Status = diff.HasChanges
                 ? $"Đã lưu: thêm {diff.ToAdd.Count}, bỏ {diff.ToRemove.Count}, giữ nguyên {diff.Unchanged.Count}."
                 : $"Tường lửa đã khớp danh sách ({diff.Unchanged.Count} mục), không cần thay đổi gì.";
+            return true;
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -519,6 +598,8 @@ public sealed class AllowListViewModel : ObservableObject
             // The applier refusing to touch a rule outside its own group lands here.
             Status = ex.Message;
         }
+
+        return false;
     }
 
     /// <summary>

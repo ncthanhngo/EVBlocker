@@ -100,6 +100,26 @@ public partial class MainWindow : Window
     /// otherwise opens on right click at the pointer. Placement is set here rather than in XAML
     /// so the menu belongs to whichever button was pressed.
     /// </remarks>
+    /// <summary>
+    /// Re-reads whether the row under the pointer is allowed before its menu shows.
+    /// </summary>
+    /// <remarks>
+    /// The commands are not requeried on every focus change, and the allow-list can change on
+    /// its own page while the same row stays selected here - so without this the menu could
+    /// offer to allow something that already is.
+    /// </remarks>
+    private void OnRowMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: ActiveConnectionsViewModel live })
+        {
+            live.Actions.RefreshCommands();
+        }
+        else if (sender is FrameworkElement { DataContext: HistoryViewModel history })
+        {
+            history.Actions.RefreshCommands();
+        }
+    }
+
     private void OnOpenAddMenu(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement button || button.ContextMenu is not { } menu)

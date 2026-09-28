@@ -10,7 +10,7 @@ using EVBlocker.Core.History;
 namespace EVBlocker.App.ViewModels;
 
 /// <summary>Display projection of one <see cref="AttemptSummary"/>.</summary>
-public sealed class HistoryRowViewModel
+public sealed class HistoryRowViewModel : IAppRow
 {
     public HistoryRowViewModel(AttemptSummary summary)
     {
@@ -22,6 +22,9 @@ public sealed class HistoryRowViewModel
         AppName = System.IO.Path.GetFileName(summary.ExecutablePath) is { Length: > 0 } name
             ? name
             : summary.ExecutablePath;
+        SoftwareDescription software = ExecutableDescriptions.Get(summary.ExecutablePath);
+        Software = software.Product;
+        Publisher = software.Publisher;
         BlockedCount = summary.BlockedCount;
         AllowedCount = summary.AllowedCount;
         LastSeen = summary.LastSeen == default
@@ -33,7 +36,10 @@ public sealed class HistoryRowViewModel
     }
 
     public string AppName { get; }
-    public string FullPath { get; }
+    public string? FullPath { get; }
+    public string Software { get; }
+    public string Publisher { get; }
+    public string SoftwareTooltip => $"{Software}\nNhà phát hành: {Publisher}";
     public int BlockedCount { get; }
     public int AllowedCount { get; }
     public string LastSeen { get; }
@@ -63,10 +69,15 @@ public sealed class HistoryViewModel : ObservableObject
     private bool _loggingOn;
     private string _setupMessage = string.Empty;
 
-    public HistoryViewModel(Func<IAttemptHistoryReader> readerFactory, Func<IAuditPolicy> auditFactory)
+    public HistoryViewModel(
+        Func<IAttemptHistoryReader> readerFactory,
+        Func<IAuditPolicy> auditFactory,
+        AppAccessActions actions)
     {
         ArgumentNullException.ThrowIfNull(readerFactory);
         ArgumentNullException.ThrowIfNull(auditFactory);
+        ArgumentNullException.ThrowIfNull(actions);
+        Actions = actions;
         _readerFactory = readerFactory;
         _auditFactory = auditFactory;
 
@@ -91,6 +102,9 @@ public sealed class HistoryViewModel : ObservableObject
     };
 
     public ObservableCollection<HistoryRowViewModel> Rows { get; } = new();
+
+    /// <summary>Allow or revoke internet access for the selected row's executable.</summary>
+    public AppAccessActions Actions { get; }
 
     public LookbackOption Lookback
     {

@@ -91,11 +91,40 @@ internal static partial class IpHlpApi
         IntPtr pUdpTable, ref int pdwSize, int bOrder, int ulAf, int tableClass, uint reserved);
 
     /// <summary>
+    /// MIB_TCPROW, the input to SetTcpEntry. Five DWORDs, so a plain struct is blittable here -
+    /// unlike the table rows above, it carries no IPv6 address.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct MibTcpRow
+    {
+        internal uint State;
+        internal uint LocalAddr;
+        internal uint LocalPort;
+        internal uint RemoteAddr;
+        internal uint RemotePort;
+    }
+
+    /// <summary>The only state SetTcpEntry accepts: tear the connection down with a reset.</summary>
+    internal const uint MIB_TCP_STATE_DELETE_TCB = 12;
+
+    /// <summary>
+    /// Resets one IPv4 TCP connection. Needs administrator rights. There is no IPv6 counterpart.
+    /// </summary>
+    [LibraryImport("iphlpapi.dll")]
+    internal static partial uint SetTcpEntry(ref MibTcpRow row);
+
+    /// <summary>
     /// Ports in these tables sit in the low two bytes of a DWORD, in network byte order.
     /// The upper two bytes are padding and must be ignored.
     /// </summary>
     internal static int DecodePort(uint raw)
     {
         return (int)((raw & 0x00FF) << 8 | (raw & 0xFF00) >> 8);
+    }
+
+    /// <summary>The inverse of <see cref="DecodePort"/>.</summary>
+    internal static uint EncodePort(int port)
+    {
+        return (uint)((port & 0x00FF) << 8 | (port & 0xFF00) >> 8);
     }
 }
