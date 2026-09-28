@@ -23,6 +23,15 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # The tag is what the update check compares; the build reports Directory.Build.props'
+      # version. If they differ, the released exe would call itself older than its own release.
+      - name: Check version matches tag
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          if ($version -ne $tag) { throw "Tag v$tag does not match <Version>$version</Version> in Directory.Build.props." }
+
       # Tests run before anything is published. A release that fails its own suite is worse than
       # no release: the update check would offer it to everyone.
       - name: Test

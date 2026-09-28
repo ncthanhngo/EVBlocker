@@ -8,6 +8,11 @@
     <!-- Windows-only by design: the whole product wraps Windows Firewall and WFP audit logs. -->
     <TargetFramework>net8.0-windows</TargetFramework>
     <LangVersion>latest</LangVersion>
+
+    <!-- What the update check compares a release tag against. Tag v1.1.0 must match this; the
+         release workflow refuses to publish when it does not, since a build that reports an older
+         version than its own release would be offered itself as an update forever. -->
+    <Version>1.1.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 

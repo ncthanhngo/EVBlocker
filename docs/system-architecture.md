@@ -241,3 +241,7 @@ artifact đột nhiên nhỏ đi nghĩa là cấu hình publish đã đổi và 
 trên máy không có .NET) → tạo release kèm exe.
 
 Tag phải parse được thành version, vì đó chính là thứ tính năng kiểm tra cập nhật đem ra so sánh.
+Tag cũng phải khớp `<Version>` trong `Directory.Build.props` — version mà exe tự báo. Workflow
+dừng nếu hai thứ lệch nhau: exe tự nhận cũ hơn release của chính nó sẽ bị mời cập nhật mãi.
+
+Phát hành bản mới: tăng `<Version>`, commit, rồi `git tag vX.Y.Z && git push origin main vX.Y.Z`.
