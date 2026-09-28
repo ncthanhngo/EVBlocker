@@ -63,8 +63,9 @@ public sealed class MainViewModel : ObservableObject
             new SshHostStore(),
             _sshKeys.EnsureKey,
             ConnectSsh,
-            key => new SshServerProvisioner().Provision(key),
-            CopyToClipboard);
+            PrepareTargetMachine,
+            CopyToClipboard,
+            LanDiscovery.DiscoverAsync);
 
         // The allow-list leads and opens by default: the question people come with is which
         // software may reach the internet, and watching what it does is secondary to that.
@@ -276,6 +277,42 @@ public sealed class MainViewModel : ObservableObject
                 "SSH",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// Turns SSH on for this machine and makes it stay on: enables the server, keeps the key in
+    /// the durable location, and registers the boot task so a later update or policy sweep cannot
+    /// quietly leave the machine unreachable.
+    /// </summary>
+    /// <remarks>
+    /// The provision itself is the part that must succeed; persisting the key and the boot task are
+    /// what make it durable, so a failure in those is reported as a warning on top of a working
+    /// setup rather than turned into an overall failure.
+    /// </remarks>
+    private static ProvisionResult PrepareTargetMachine(string publicKey)
+    {
+        ProvisionResult result = new SshServerProvisioner().Provision(publicKey);
+        if (!result.Succeeded)
+        {
+            return result;
+        }
+
+        try
+        {
+            // Point the SYSTEM boot task at the Program Files copy, not at wherever the app was
+            // launched from: a task running a file any user can overwrite runs their code as SYSTEM.
+            string fixedExe = FixedInstall.Ensure();
+            AdminKeySource.Persist(publicKey);
+            new SshSetupTask().Install(fixedExe);
+            return result;
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return result with
+            {
+                Detail = result.Detail + $" Nhưng chưa đặt được tự-bật-khi-mở-máy: {ex.Message}",
+            };
         }
     }
 

@@ -440,6 +440,8 @@
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
             <Button Content="Thêm máy" Style="{StaticResource PrimaryButton}" Command="{Binding AddCommand}" />
             <Button Content="Xoá máy" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
+            <Button Content="Tìm máy trong mạng" Margin="10,0,0,0" Command="{Binding RediscoverCommand}"
+                    ToolTip="Hỏi toàn mạng nội bộ xem máy nào đang chạy EVBlocker và thêm vào danh sách" />
           </StackPanel>
 
           <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"

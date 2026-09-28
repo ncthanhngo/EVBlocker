@@ -27,6 +27,9 @@ public sealed class SshServerProvisioner
     /// <summary>Named so a person reading Windows Firewall can see who added it and why.</summary>
     public const string FirewallRuleName = "EVBlocker SSH (LAN)";
 
+    /// <summary>The inbound rule that lets this machine answer discovery probes.</summary>
+    public const string DiscoveryRuleName = "EVBlocker Discovery (LAN)";
+
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(10);
 
     /// <summary>
@@ -94,6 +97,13 @@ public sealed class SshServerProvisioner
         script.AppendLine(
             $"New-NetFirewallRule -DisplayName '{FirewallRuleName}' -Direction Inbound -Action Allow " +
             "-Protocol TCP -LocalPort 22 -RemoteAddress LocalSubnet | Out-Null");
+
+        // 3b. The discovery port, so this machine can answer "who runs EVBlocker?" from the subnet.
+        script.AppendLine(
+            $"Get-NetFirewallRule -DisplayName '{DiscoveryRuleName}' -ErrorAction SilentlyContinue | Remove-NetFirewallRule");
+        script.AppendLine(
+            $"New-NetFirewallRule -DisplayName '{DiscoveryRuleName}' -Direction Inbound -Action Allow " +
+            $"-Protocol UDP -LocalPort {LanDiscoveryProtocol.Port} -RemoteAddress LocalSubnet | Out-Null");
 
         // 4. Authorise the key for administrators. On Windows an admin's keys live in this one
         //    machine-wide file, not the per-user one, and its ACL must exclude normal users or

@@ -22,18 +22,22 @@ public sealed class SshViewModel : ObservableObject
 {
     private const string DefaultPassword = "3214";
 
+    private static readonly TimeSpan DiscoveryWindow = TimeSpan.FromSeconds(2);
+
     private readonly UserSettings _settings;
     private readonly SshHostStore _store;
     private readonly Func<string> _ensurePublicKey;
     private readonly Action<SshHost> _connect;
     private readonly Func<string, ProvisionResult> _provision;
     private readonly Action<string> _copyToClipboard;
+    private readonly Func<TimeSpan, Task<IReadOnlyList<DiscoveredMachine>>> _discover;
 
     private readonly RelayCommand _unlockCommand;
     private readonly RelayCommand _addCommand;
     private readonly RelayCommand _removeCommand;
     private readonly RelayCommand _copyKeyCommand;
     private readonly RelayCommand _prepareCommand;
+    private readonly RelayCommand _rediscoverCommand;
 
     private SshHostList _list = new();
     private bool _unlocked;
@@ -52,7 +56,8 @@ public sealed class SshViewModel : ObservableObject
         Func<string> ensurePublicKey,
         Action<SshHost> connect,
         Func<string, ProvisionResult> provision,
-        Action<string> copyToClipboard)
+        Action<string> copyToClipboard,
+        Func<TimeSpan, Task<IReadOnlyList<DiscoveredMachine>>> discover)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(store);
@@ -60,6 +65,7 @@ public sealed class SshViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(connect);
         ArgumentNullException.ThrowIfNull(provision);
         ArgumentNullException.ThrowIfNull(copyToClipboard);
+        ArgumentNullException.ThrowIfNull(discover);
 
         _settings = settings;
         _store = store;
@@ -67,12 +73,14 @@ public sealed class SshViewModel : ObservableObject
         _connect = connect;
         _provision = provision;
         _copyToClipboard = copyToClipboard;
+        _discover = discover;
 
         _unlockCommand = new RelayCommand(Unlock);
         _addCommand = new RelayCommand(Add);
         _removeCommand = new RelayCommand(RemoveSelected, () => _selected is not null);
         _copyKeyCommand = new RelayCommand(() => _copyToClipboard(_publicKey), () => _publicKey.Length > 0);
         _prepareCommand = new RelayCommand(() => _ = PrepareThisMachineAsync(), () => !_busy && _adminPublicKeyInput.Trim().Length > 0);
+        _rediscoverCommand = new RelayCommand(() => _ = DiscoverAndMergeAsync(), () => !_busy);
     }
 
     public ObservableCollection<SshHostRowViewModel> Hosts { get; } = new();
@@ -164,6 +172,7 @@ public sealed class SshViewModel : ObservableObject
     public System.Windows.Input.ICommand RemoveCommand => _removeCommand;
     public System.Windows.Input.ICommand CopyKeyCommand => _copyKeyCommand;
     public System.Windows.Input.ICommand PrepareCommand => _prepareCommand;
+    public System.Windows.Input.ICommand RediscoverCommand => _rediscoverCommand;
 
     private void Unlock()
     {
@@ -179,6 +188,64 @@ public sealed class SshViewModel : ObservableObject
 
         LoadHosts();
         LoadKey();
+        _ = DiscoverAndMergeAsync();
+    }
+
+    /// <summary>
+    /// Asks the network which machines run EVBlocker and folds any new ones into the list.
+    /// </summary>
+    /// <remarks>
+    /// Additive only. A machine already listed keeps its row and whatever name the admin gave it;
+    /// discovery never renames or removes, so a found host does not overwrite a deliberate label,
+    /// and a machine that is off today does not vanish from the list.
+    /// </remarks>
+    private async Task DiscoverAndMergeAsync()
+    {
+        _busy = true;
+        _rediscoverCommand.RaiseCanExecuteChanged();
+        Status = "Đang tìm máy trong mạng…";
+
+        try
+        {
+            IReadOnlyList<DiscoveredMachine> machines = await _discover(DiscoveryWindow).ConfigureAwait(true);
+
+            int added = 0;
+            foreach (DiscoveredMachine machine in machines)
+            {
+                if (_list.Hosts.Any(h => string.Equals(h.Address.Trim(), machine.Address, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                var host = new SshHost
+                {
+                    DisplayName = machine.HostName,
+                    Address = machine.Address,
+                    Username = Environment.UserName,
+                };
+                _list.Hosts.Add(host);
+                Hosts.Add(NewRow(host));
+                added++;
+            }
+
+            if (added > 0)
+            {
+                Persist();
+            }
+
+            Status = added > 0
+                ? $"Tìm thấy thêm {added} máy. Tổng {Hosts.Count} máy."
+                : $"{Hosts.Count} máy. Không thấy máy mới trong mạng.";
+        }
+        catch (Exception ex) when (ex is System.Net.Sockets.SocketException or InvalidOperationException)
+        {
+            Status = $"Không tìm được máy trong mạng: {ex.Message}";
+        }
+        finally
+        {
+            _busy = false;
+            _rediscoverCommand.RaiseCanExecuteChanged();
+        }
     }
 
     /// <summary>The stored hash, or the built-in default when none has been set.</summary>

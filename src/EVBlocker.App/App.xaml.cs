@@ -6,6 +6,7 @@ using EVBlocker.App.Theming;
 using EVBlocker.App.Views;
 using EVBlocker.Core.Firewall;
 using EVBlocker.Core.Safety;
+using EVBlocker.Core.Ssh;
 using EVBlocker.Core.Startup;
 
 namespace EVBlocker.App;
@@ -28,6 +29,12 @@ public partial class App : Application
         "EVBlocker",
         "reconcile.log");
 
+    /// <summary>The boot SSH setup runs under SYSTEM with nobody watching, so it leaves a log too.</summary>
+    private static readonly string SshSetupLogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+        "EVBlocker",
+        "ssh-setup.log");
+
     private static string DataDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "EVBlocker");
@@ -35,6 +42,13 @@ public partial class App : Application
     private SingleInstance? _instance;
     private TrayIcon? _tray;
     private MainWindow? _window;
+
+    /// <summary>
+    /// Answers discovery probes for as long as the app runs, so this machine is findable on the
+    /// LAN even when it sits in the tray. Started after the single-instance claim, since only the
+    /// instance that owns the app should hold the port.
+    /// </summary>
+    private LanDiscovery? _discovery;
 
     public App()
     {
@@ -58,6 +72,12 @@ public partial class App : Application
         if (HasSwitch(e, ScheduledTaskDeadManSwitch.RemoveBootGuardSwitch))
         {
             Shutdown(RemoveBootGuard());
+            return;
+        }
+
+        if (HasSwitch(e, SshSetupTask.SetupSwitch))
+        {
+            Shutdown(RunSshSetup());
             return;
         }
 
@@ -100,6 +120,10 @@ public partial class App : Application
 
         _tray = new TrayIcon(ShowMainWindow, ExitApplication);
 
+        // Runs in tray mode too, so a machine answers "who runs EVBlocker?" whenever the app is up.
+        _discovery = new LanDiscovery();
+        _discovery.StartResponder();
+
         if (!HasSwitch(e, LoginStartup.TraySwitch))
         {
             ShowMainWindow();
@@ -128,6 +152,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _discovery?.Dispose();
         _tray?.Dispose();
         _instance?.Dispose();
         base.OnExit(e);
@@ -214,6 +239,37 @@ public partial class App : Application
         }
 
         return exitCode;
+    }
+
+    /// <summary>
+    /// Headless SSH setup at boot: turns the SSH server on and re-authorises the admin key, using
+    /// the key shipped with this machine's deployment. Returns the process exit code.
+    /// </summary>
+    /// <remarks>
+    /// A machine with no admin key shipped to it is not one being managed, so that is a no-op with
+    /// a zero code, not a failure. The key is read from disk only, never from the network, so this
+    /// cannot be steered into trusting a key by anything arriving over the wire.
+    /// </remarks>
+    private static int RunSshSetup()
+    {
+        try
+        {
+            string? key = AdminKeySource.Resolve();
+            if (key is null)
+            {
+                Append(SshSetupLogPath, "Không có khoá admin trên máy này — bỏ qua.");
+                return 0;
+            }
+
+            ProvisionResult result = new SshServerProvisioner().Provision(key);
+            Append(SshSetupLogPath, result.Detail);
+            return result.Succeeded ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            Append(SshSetupLogPath, $"Unhandled: {ex}");
+            return 1;
+        }
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

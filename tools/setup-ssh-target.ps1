@@ -13,10 +13,17 @@
 .PARAMETER PublicKey
     Nội dung khoá công khai của admin (một dòng, bắt đầu bằng "ssh-").
 
+.PARAMETER ExePath
+    Đường dẫn EVBlocker.exe trên máy đích. Nếu có và file tồn tại, script đăng ký tác vụ chạy khi
+    mở máy để tự bật lại SSH sau này. Mặc định là bản trong Program Files.
+
 .EXAMPLE
     .\setup-ssh-target.ps1 -PublicKey "ssh-ed25519 AAAA... evblocker-admin@PC-ADMIN"
 #>
-param([Parameter(Mandatory = $true)][string]$PublicKey)
+param(
+    [Parameter(Mandatory = $true)][string]$PublicKey,
+    [string]$ExePath = (Join-Path $env:ProgramFiles 'EVBlocker\EVBlocker.exe')
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -53,4 +60,26 @@ if ((Get-Content $authFile -ErrorAction SilentlyContinue) -notcontains $key) {
 icacls $authFile /inheritance:r | Out-Null
 icacls $authFile /grant 'Administrators:F' 'SYSTEM:F' | Out-Null
 
-Write-Output "Xong. SSH đã bật, cổng 22 mở cho mạng nội bộ, đã cấp phép khoá. Mật khẩu vẫn dùng được làm dự phòng."
+# 5. Mở cổng dò tìm để máy này trả lời "ai đang chạy EVBlocker?" từ mạng nội bộ.
+Get-NetFirewallRule -DisplayName 'EVBlocker Discovery (LAN)' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+New-NetFirewallRule -DisplayName 'EVBlocker Discovery (LAN)' -Direction Inbound -Action Allow `
+    -Protocol UDP -LocalPort 50505 -RemoteAddress LocalSubnet | Out-Null
+
+# 6. Lưu khoá vào ProgramData để tác vụ khởi động tìm thấy, rồi đăng ký tác vụ tự bật lại khi mở máy.
+$keyStore = Join-Path $env:ProgramData 'EVBlocker\ssh-admin.pub'
+New-Item -ItemType Directory -Force -Path (Split-Path $keyStore) | Out-Null
+Set-Content -Path $keyStore -Value $key -Encoding ascii
+
+if (Test-Path $ExePath) {
+    $action = New-ScheduledTaskAction -Execute $ExePath -Argument '--ssh-setup'
+    $trigger = New-ScheduledTaskTrigger -AtStartup
+    $principal = New-ScheduledTaskPrincipal -UserId 'S-1-5-18' -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew
+    Register-ScheduledTask -TaskName 'EVBlocker-SshSetup' -Action $action -Trigger $trigger `
+        -Principal $principal -Settings $settings -Force | Out-Null
+    $boot = "Đã đăng ký tự bật lại khi mở máy."
+} else {
+    $boot = "Chưa đăng ký tác vụ khởi động: không thấy $ExePath (truyền -ExePath cho đúng)."
+}
+
+Write-Output "Xong. SSH đã bật, cổng 22 mở cho mạng nội bộ, đã cấp phép khoá. Mật khẩu vẫn dùng được làm dự phòng. $boot"
