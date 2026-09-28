@@ -41,8 +41,8 @@
     {
       "name": "Claude Desktop",
       "candidates": [
-        "%LOCALAPPDATA%\\AnthropicClaude\\claude.exe",
         "%LOCALAPPDATA%\\AnthropicClaude\\app-*\\claude.exe",
+        "%LOCALAPPDATA%\\AnthropicClaude\\claude.exe",
         "%LOCALAPPDATA%\\Programs\\Claude\\Claude.exe"
       ]
     },
@@ -246,8 +246,8 @@
     {
       "name": "Slack",
       "candidates": [
-        "%LOCALAPPDATA%\\slack\\slack.exe",
         "%LOCALAPPDATA%\\slack\\app-*\\slack.exe",
+        "%LOCALAPPDATA%\\slack\\slack.exe",
         "%ProgramFiles%\\Slack\\slack.exe"
       ]
     },
@@ -266,8 +266,8 @@
     {
       "name": "Postman",
       "candidates": [
-        "%LOCALAPPDATA%\\Postman\\Postman.exe",
-        "%LOCALAPPDATA%\\Postman\\app-*\\Postman.exe"
+        "%LOCALAPPDATA%\\Postman\\app-*\\Postman.exe",
+        "%LOCALAPPDATA%\\Postman\\Postman.exe"
       ]
     },
     {
@@ -279,8 +279,8 @@
     {
       "name": "Figma",
       "candidates": [
-        "%LOCALAPPDATA%\\Figma\\Figma.exe",
-        "%LOCALAPPDATA%\\Figma\\app-*\\Figma.exe"
+        "%LOCALAPPDATA%\\Figma\\app-*\\Figma.exe",
+        "%LOCALAPPDATA%\\Figma\\Figma.exe"
       ]
     }
   ]
