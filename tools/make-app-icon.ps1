@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Vẽ lại src/EVBlocker.App/Assets/app.ico: khiên bảo vệ quả địa cầu, kèm huy hiệu cấm.
+    Vẽ lại src/EVBlocker.App/Assets/app.ico: khiên xanh bảo vệ quả địa cầu, nền trong suốt.
 
 .DESCRIPTION
     Vẽ bằng System.Drawing ở từng kích thước thay vì thu nhỏ một ảnh lớn, để ở 16-24 px quả địa
@@ -13,17 +13,6 @@
 param([string]$OutIco, [string]$PreviewDir)
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = 'Stop'
-
-function New-RoundRect([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) {
-    $p = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $d = 2 * $r
-    $p.AddArc($x, $y, $d, $d, 180, 90)
-    $p.AddArc($x + $w - $d, $y, $d, $d, 270, 90)
-    $p.AddArc($x + $w - $d, $y + $h - $d, $d, $d, 0, 90)
-    $p.AddArc($x, $y + $h - $d, $d, $d, 90, 90)
-    $p.CloseFigure()
-    return $p
-}
 
 function New-Shield {
     # Shield outline in a 256 design space.
@@ -47,12 +36,11 @@ function Render([int]$size) {
     $g.ScaleTransform($size / 256.0, $size / 256.0)
     $small = $size -le 24
 
-    # Background tile: deep navy.
-    $bg = New-RoundRect 8 8 240 240 52
-    $bgBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        (New-Object System.Drawing.PointF(0, 0)), (New-Object System.Drawing.PointF(0, 256)),
-        [System.Drawing.Color]::FromArgb(255, 30, 64, 104), [System.Drawing.Color]::FromArgb(255, 12, 30, 52))
-    $g.FillPath($bgBrush, $bg)
+    # No background tile: the shield alone fills the canvas so it reads large at 16-24 px.
+    # Shield spans y 34-232 in design space; grow it to about 6-250.
+    $g.TranslateTransform(128, 128)
+    $g.ScaleTransform(1.23, 1.23)
+    $g.TranslateTransform(-128, -133)
 
     # Shield: green, the "protected" colour.
     $shield = New-Shield
@@ -61,30 +49,21 @@ function Render([int]$size) {
         [System.Drawing.Color]::FromArgb(255, 52, 211, 153), [System.Drawing.Color]::FromArgb(255, 5, 150, 105))
     $g.FillPath($shBrush, $shield)
 
-    # Globe inside the shield: the internet being guarded.
+    # Globe inside the shield: the internet being guarded. At 16-24 px it is drawn larger and
+    # keeps only the outline, one meridian and the equator, so it still reads as a globe.
     $white = [System.Drawing.Color]::White
-    $stroke = if ($small) { 16 } else { 9 }
+    $stroke = if ($small) { 14 } else { 9 }
     $pen = New-Object System.Drawing.Pen($white, $stroke)
-    $cx = 128; $cy = 128; $r = 50
+    $cx = 128; $cy = 128; $r = if ($small) { 58 } else { 42 }
     $g.DrawEllipse($pen, $cx - $r, $cy - $r, 2 * $r, 2 * $r)
+    $mw = if ($small) { 23 } else { 17 }
+    $g.DrawEllipse($pen, $cx - $mw, $cy - $r, 2 * $mw, 2 * $r)
+    $g.DrawLine($pen, $cx - $r, $cy, $cx + $r, $cy)
     if (-not $small) {
-        $g.DrawEllipse($pen, $cx - 20, $cy - $r, 40, 2 * $r)
-        $g.DrawLine($pen, $cx - $r, $cy, $cx + $r, $cy)
         $thin = New-Object System.Drawing.Pen($white, 6)
-        $g.DrawLine($thin, $cx - 43, $cy - 25, $cx + 43, $cy - 25)
-        $g.DrawLine($thin, $cx - 43, $cy + 25, $cx + 43, $cy + 25)
+        $g.DrawLine($thin, $cx - 36, $cy - 21, $cx + 36, $cy - 21)
+        $g.DrawLine($thin, $cx - 36, $cy + 21, $cx + 36, $cy + 21)
     }
-
-    # Block badge, bottom-right: outbound traffic is denied by default.
-    $bx = 186; $by = 186; $br = if ($small) { 52 } else { 44 }
-    $ring = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 12, 30, 52))
-    $g.FillEllipse($ring, $bx - $br - 8, $by - $br - 8, 2 * ($br + 8), 2 * ($br + 8))
-    $red = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 239, 68, 68))
-    $g.FillEllipse($red, $bx - $br, $by - $br, 2 * $br, 2 * $br)
-    $barPen = New-Object System.Drawing.Pen($white, $(if ($small) { 20 } else { 14 }))
-    $barPen.StartCap = 'Round'; $barPen.EndCap = 'Round'
-    $k = $br * 0.52
-    $g.DrawLine($barPen, $bx - $k, $by, $bx + $k, $by)
 
     $g.Dispose()
     return $bmp
