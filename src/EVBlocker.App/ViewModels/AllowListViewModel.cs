@@ -172,7 +172,7 @@ public sealed class AllowListViewModel : ObservableObject
         if (seeded.Count > 0)
         {
             Status = $"Đã tự cho phép {seeded.Count} phần mềm quen thuộc: {string.Join(", ", seeded.Names)}. "
-                + "Bấm \"Lưu vào tường lửa\" để áp dụng.";
+                + "Sẽ tự áp vào tường lửa khi chạy quyền quản trị hoặc khi khởi động lại máy.";
 
             if (seeded.ScriptHosts.Count > 0)
             {

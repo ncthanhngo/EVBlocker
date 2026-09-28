@@ -155,7 +155,10 @@ Muốn bổ sung ứng dụng vào danh mục dò thì tạo file ghi đè (xem 
 trúc của danh mục gốc; đường dẫn dùng được biến môi trường và một `*` cho mỗi đoạn — cần thiết
 cho phần mềm cài vào thư mục đặt tên theo phiên bản.
 
-Bấm **Lưu vào tường lửa** để ghi danh sách. Chưa bắt đầu chặn thì việc này chưa có tác dụng gì.
+Khi chạy với quyền quản trị, mỗi lần **Thêm phần mềm** hoặc **Bỏ cho phép** sẽ tự ghi vào tường
+lửa ngay — không cần thao tác riêng. Nếu đang chạy quyền thường, thay đổi vẫn được lưu vào danh
+sách và tự áp ở lần chạy quyền quản trị kế tiếp hoặc khi khởi động lại máy. Chưa bắt đầu chặn thì
+việc ghi vào tường lửa chưa có tác dụng gì.
 
 ### 3. Bắt đầu chặn
 

@@ -279,8 +279,6 @@
             </Button.ContextMenu>
           </Button>
           <Button Content="Bỏ cho phép" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
-          <Button Content="Lưu vào tường lửa" Margin="10,0,0,0" Command="{Binding ApplyCommand}"
-                  ToolTip="Ghi danh sách này vào tường lửa của Windows. Cần quyền quản trị." />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"

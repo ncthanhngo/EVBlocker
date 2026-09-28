@@ -9,10 +9,11 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <LangVersion>latest</LangVersion>
 
-    <!-- What the update check compares a release tag against. Tag v1.1.0 must match this; the
-         release workflow refuses to publish when it does not, since a build that reports an older
-         version than its own release would be offered itself as an update forever. -->
-    <Version>1.1.0</Version>
+    <!-- What the update check compares a release tag against. The release workflow refuses to
+         publish when tag and version disagree, since a build that reports an older version than
+         its own release would be offered itself as an update forever. Kept at 1.0.0: every
+         change so far ships under the single 1.0 release. -->
+    <Version>1.0.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
