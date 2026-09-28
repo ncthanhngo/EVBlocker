@@ -72,7 +72,9 @@
     {
       "name": "Zalo",
       "candidates": [
+        "%LOCALAPPDATA%\\Programs\\Zalo\\Zalo-*\\Zalo.exe",
         "%LOCALAPPDATA%\\Programs\\Zalo\\Zalo.exe",
+        "%LOCALAPPDATA%\\Zalo\\Zalo-*\\Zalo.exe",
         "%LOCALAPPDATA%\\Zalo\\Zalo.exe",
         "%ProgramFiles%\\Zalo\\Zalo.exe"
       ]
