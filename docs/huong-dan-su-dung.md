@@ -261,6 +261,37 @@ Lưu ý: ổ cứng ngoài cắm qua USB thường được Windows báo là *�
 nên ứng dụng hỏi thẳng driver xem ổ nằm trên bus nào. Nhờ vậy ổ cứng USB — loại hay mang virus
 nhất — không bị bỏ sót.
 
+## SSH — điều khiển máy từ xa
+
+Mục **SSH** để admin mở terminal vào các máy khác trong cùng mạng và sửa chữa khi cần. Cần nhập
+mật khẩu để vào mục này; mặc định là `3214`. Đây chỉ là lớp che mắt, **không phải bảo mật thật** —
+ai mở được app cũng đọc được file danh sách máy trên đĩa.
+
+Cách hoạt động:
+
+- **Khoá của máy này.** Lần đầu mở mục SSH, app tự tạo một cặp khoá SSH trên máy quản trị. Khoá
+  công khai hiện trong khung để bạn chép. Máy đích phải có khoá này thì mới cho bạn vào.
+- **Danh sách máy.** Bấm **Thêm máy**, điền tên (đặt sao cho dễ nhận ra), địa chỉ IP và tài khoản
+  admin. Sửa trực tiếp trong bảng; danh sách tự lưu.
+- **Bấm biểu tượng terminal** ở đầu mỗi dòng để mở cửa sổ SSH vào máy đó. App đăng nhập bằng khoá,
+  không hỏi mật khẩu. Cửa sổ giữ nguyên khi thoát để bạn đọc được lỗi nếu có.
+
+Chuẩn bị máy đích để nhận SSH — chọn một trong hai:
+
+1. **Trên chính máy đích:** mở EVBlocker bằng quyền quản trị, vào mục SSH, dán khoá công khai của
+   máy quản trị vào ô dưới cùng rồi bấm **Chuẩn bị máy này để nhận SSH**. App bật OpenSSH Server,
+   mở cổng 22 cho mạng nội bộ và cấp phép khoá.
+2. **Đẩy hàng loạt:** chạy `tools/setup-ssh-target.ps1 -PublicKey "ssh-ed25519 AAAA..."` bằng quyền
+   quản trị trên từng máy (qua GPO hoặc login script). Cùng các bước như trên.
+
+Lưu ý:
+
+- **Đăng nhập bằng mật khẩu Windows vẫn bật** làm dự phòng, phòng khi khoá cài lỗi trên một máy.
+- **Cổng 22 chỉ mở cho mạng nội bộ** (LocalSubnet), không ra internet.
+- **EVBlocker không cản SSH:** nó chỉ chặn kết nối đi ra, còn SSH là kết nối đi vào.
+- **Wi-Fi công ty** có thể bật cách ly máy khách, khi đó các máy không thấy nhau — kiểm tra bằng
+  `Test-NetConnection <ip> -Port 22` trước.
+
 ## Vị trí file
 
 | Đường dẫn | Nội dung |

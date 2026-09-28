@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using EVBlocker.App.ViewModels;
 
 namespace EVBlocker.App.Views;
@@ -117,6 +118,21 @@ public partial class MainWindow : Window
         else if (sender is FrameworkElement { DataContext: HistoryViewModel history })
         {
             history.Actions.RefreshCommands();
+        }
+    }
+
+    /// <summary>
+    /// Pushes the typed password into the view model on each keystroke.
+    /// </summary>
+    /// <remarks>
+    /// WPF's PasswordBox does not expose Password for binding, on purpose, so the value is copied
+    /// across by hand. The box sits inside the SSH template, so its DataContext is that view model.
+    /// </remarks>
+    private void OnSshPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (sender is PasswordBox { DataContext: SshViewModel ssh } box)
+        {
+            ssh.PasswordInput = box.Password;
         }
     }
 

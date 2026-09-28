@@ -386,6 +386,88 @@
       </DockPanel>
     </DataTemplate>
 
+    <!-- ===================== section: ssh =====================
+         A password gate over the machine list. The gate is a drawer lock, not security: the list
+         is a readable file. One click opens a terminal into a machine as administrator. -->
+    <DataTemplate DataType="{x:Type vm:SshViewModel}">
+      <Grid>
+
+        <!-- The gate. Shown until the password opens it. -->
+        <Border Style="{StaticResource Card}" Padding="24,20" VerticalAlignment="Top"
+                HorizontalAlignment="Left" Width="420"
+                Visibility="{Binding Locked, Converter={StaticResource BoolToVis}}">
+          <StackPanel>
+            <TextBlock Text="MỞ MỤC SSH" Style="{StaticResource SectionLabel}" />
+            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Style="{StaticResource MutedText}"
+                       Text="Nhập mật khẩu để xem và kết nối tới các máy. Đây chỉ là lớp che, không phải bảo mật thật." />
+            <PasswordBox x:Name="SshPasswordBox" Margin="0,14,0,0"
+                         PasswordChanged="OnSshPasswordChanged">
+              <PasswordBox.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding UnlockCommand}" />
+              </PasswordBox.InputBindings>
+            </PasswordBox>
+            <Button Content="Mở" Margin="0,14,0,0" HorizontalAlignment="Left"
+                    Style="{StaticResource PrimaryButton}" Command="{Binding UnlockCommand}" />
+            <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource DangerBrush}"
+                       Text="{Binding GateMessage}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- The panel. Shown once unlocked. -->
+        <DockPanel Visibility="{Binding Unlocked, Converter={StaticResource BoolToVis}}">
+
+          <!-- The admin key and the one-time machine setup. -->
+          <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="20,16" Margin="0,0,0,14">
+            <StackPanel>
+              <TextBlock Text="KHOÁ CỦA MÁY NÀY" Style="{StaticResource SectionLabel}" />
+              <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Style="{StaticResource MutedText}"
+                         Text="{Binding KeyMessage}" />
+              <TextBox Margin="0,10,0,0" Text="{Binding PublicKey, Mode=OneWay}" IsReadOnly="True"
+                       TextWrapping="Wrap" FontSize="11.5" />
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Content="Chép khoá" Command="{Binding CopyKeyCommand}" />
+                <Button Content="Chuẩn bị máy này để nhận SSH" Margin="10,0,0,0"
+                        Style="{StaticResource PrimaryButton}" Command="{Binding PrepareCommand}"
+                        ToolTip="Bật OpenSSH Server, mở cổng 22 cho mạng nội bộ và cài khoá bên dưới. Cần quyền quản trị." />
+              </StackPanel>
+              <TextBlock Margin="0,10,0,2" Style="{StaticResource MutedText}"
+                         Text="Khoá được cấp phép trên máy này (dán khoá của máy quản trị nếu đang đứng ở máy đích):" />
+              <TextBox Text="{Binding AdminPublicKeyInput, UpdateSourceTrigger=PropertyChanged}"
+                       TextWrapping="Wrap" FontSize="11.5" />
+            </StackPanel>
+          </Border>
+
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
+            <Button Content="Thêm máy" Style="{StaticResource PrimaryButton}" Command="{Binding AddCommand}" />
+            <Button Content="Xoá máy" Margin="10,0,0,0" Command="{Binding RemoveCommand}" />
+          </StackPanel>
+
+          <TextBlock DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap"
+                     Style="{StaticResource MutedText}" Text="{Binding Status}" />
+
+          <Border Style="{StaticResource Card}" Padding="4,0,4,4">
+            <DataGrid ItemsSource="{Binding Hosts}" SelectedItem="{Binding Selected}"
+                      CanUserAddRows="False">
+              <DataGrid.Columns>
+                <DataGridTemplateColumn Header="MỞ" Width="52" CanUserSort="False">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <Button Command="{Binding ConnectCommand}" Content="&#xE756;"
+                              FontFamily="Segoe MDL2 Assets" FontSize="15" Padding="0" Width="34" Height="26"
+                              ToolTip="Mở terminal SSH vào máy này" Cursor="Hand" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="TÊN MÁY" Binding="{Binding DisplayName}" Width="220" />
+                <DataGridTextColumn Header="ĐỊA CHỈ IP" Binding="{Binding Address}" Width="180" />
+                <DataGridTextColumn Header="TÀI KHOẢN ADMIN" Binding="{Binding Username}" Width="*" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Border>
+        </DockPanel>
+      </Grid>
+    </DataTemplate>
+
     <!-- ===================== section: settings ===================== -->
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <StackPanel>

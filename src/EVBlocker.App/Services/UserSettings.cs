@@ -30,6 +30,16 @@ public sealed class UserSettings
 
     /// <summary>On unless turned off: a settings file from before this existed reads as on.</summary>
     public bool StartWithWindows { get; set; } = true;
+
+    /// <summary>
+    /// SHA-256 of the password that opens the SSH panel. Empty means the default (3214) still
+    /// applies, so a fresh install has a known password without shipping one in the file.
+    /// </summary>
+    /// <remarks>
+    /// This gate keeps casual eyes off the machine list; it is not a real secret. Anyone who can
+    /// run the app can read the list file on disk, so the hash is a lock on a drawer, not a safe.
+    /// </remarks>
+    public string SshGateHash { get; set; } = string.Empty;
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]

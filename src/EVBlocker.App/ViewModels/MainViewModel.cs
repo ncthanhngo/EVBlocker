@@ -7,6 +7,7 @@ using EVBlocker.Core.History;
 using EVBlocker.Core.Installed;
 using EVBlocker.Core.Monitor;
 using EVBlocker.Core.Policy;
+using EVBlocker.Core.Ssh;
 using EVBlocker.Core.Startup;
 using EVBlocker.Core.Usb;
 
@@ -15,6 +16,7 @@ namespace EVBlocker.App.ViewModels;
 /// <summary>Shell view model: navigation rail, status strip and the elevation banner.</summary>
 public sealed class MainViewModel : ObservableObject
 {
+    private readonly SshKeyManager _sshKeys = new();
     private NavSectionViewModel _selectedSection;
 
     public MainViewModel()
@@ -56,6 +58,14 @@ public sealed class MainViewModel : ObservableObject
 
         Settings = new SettingsViewModel();
 
+        Ssh = new SshViewModel(
+            UserSettingsStore.Load(),
+            new SshHostStore(),
+            _sshKeys.EnsureKey,
+            ConnectSsh,
+            key => new SshServerProvisioner().Provision(key),
+            CopyToClipboard);
+
         // The allow-list leads and opens by default: the question people come with is which
         // software may reach the internet, and watching what it does is secondary to that.
         Sections = new ObservableCollection<NavSectionViewModel>
@@ -63,6 +73,7 @@ public sealed class MainViewModel : ObservableObject
             new("Phần mềm được phép", "#2BD673", AllowList),
             new("Theo dõi", "#5AA9FF", Monitor),
             new("USB", "#F5B93B", Usb),
+            new("SSH", "#B98BFF", Ssh),
         };
 
         // Its own list, pinned to the foot of the rail. Settings is not a peer of the two above
@@ -114,6 +125,8 @@ public sealed class MainViewModel : ObservableObject
     public EnforcementViewModel Enforcement { get; }
 
     public SettingsViewModel Settings { get; }
+
+    public SshViewModel Ssh { get; }
 
     public System.Windows.Input.ICommand RelaunchElevatedCommand { get; }
 
@@ -225,6 +238,59 @@ public sealed class MainViewModel : ObservableObject
             };
         },
         path => AllowList.IsAllowed(path));
+
+    /// <summary>
+    /// Opens a terminal window running ssh into the machine, signing in with the admin key.
+    /// </summary>
+    /// <remarks>
+    /// Launched through cmd with /k so the window stays open after ssh exits: a refused or timed-
+    /// out connection leaves its own message on screen instead of a window that blinks shut. The
+    /// key path and destination are separate arguments, so a space in the profile path is safe.
+    /// </remarks>
+    private void ConnectSsh(SshHost host)
+    {
+        string user = string.IsNullOrWhiteSpace(host.Username) ? Environment.UserName : host.Username.Trim();
+        string target = $"{user}@{host.Address.Trim()}";
+
+        var startInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            UseShellExecute = true,
+        };
+        startInfo.ArgumentList.Add("/k");
+        startInfo.ArgumentList.Add("ssh");
+        startInfo.ArgumentList.Add("-i");
+        startInfo.ArgumentList.Add(_sshKeys.PrivateKeyPath);
+        startInfo.ArgumentList.Add("-o");
+        startInfo.ArgumentList.Add("StrictHostKeyChecking=accept-new");
+        startInfo.ArgumentList.Add(target);
+
+        try
+        {
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            System.Windows.MessageBox.Show(
+                $"Không mở được SSH tới {target}: {ex.Message}",
+                "SSH",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+        }
+    }
+
+    private static void CopyToClipboard(string text)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(text);
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            // The clipboard can be held by another process for a moment; a failed copy is not
+            // worth interrupting anyone over, and the key is on screen to copy by hand.
+        }
+    }
 
     private static bool Confirm(string title, string message) =>
         System.Windows.MessageBox.Show(
