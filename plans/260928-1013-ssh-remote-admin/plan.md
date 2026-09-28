@@ -1,6 +1,18 @@
 # SSH remote admin panel
 
-Status: in progress
+Status: code complete, chưa kiểm tra lúc chạy (build/screenshot bị bộ lọc an toàn chặn ở phiên cuối)
+
+## Đã làm
+- phase-01 (máy khách): cổng mật khẩu, danh sách máy sửa tại chỗ, sinh khoá, nút terminal → ssh. Commit c536ea0.
+- phase-02 (máy đích): SshServerProvisioner + nút "Chuẩn bị máy này" + setup-ssh-target.ps1. Commit c536ea0.
+- Dò tìm LAN (UDP 50505) thay cho đăng ký: LanDiscoveryProtocol + LanDiscovery, danh sách tự điền. Commit 1df24f1.
+- Tự chạy khi mở máy: SshSetupTask (SYSTEM, --ssh-setup) đọc khoá gói sẵn (AdminKeySource), self-heal. Commit 1df24f1.
+- Khoá admin gói trong bản cài client (không nhận qua mạng — quyết định của người dùng).
+- 402 test đạt ở lần build sạch trước chỉnh sửa cuối; chỉnh sửa cuối chỉ đổi FixedInstall.ExecutablePath → FixedInstall.Ensure().
+
+## Chưa kiểm tra / rủi ro
+- Build + ảnh giao diện phiên cuối bị bộ lọc an toàn chặn → cần build lại + mở app xác nhận.
+- Toàn bộ mạng (dò tìm) + elevated (bật SSH, scheduled task) chưa test trên máy thật.
 
 Thêm mục **SSH** vào app: một bảng cho admin quản lý và bấm-để-ssh vào các máy cùng mạng. Máy đích
 tự bật OpenSSH Server khi chạy app với quyền admin.
