@@ -322,7 +322,7 @@ public sealed class AllowListViewModel : ObservableObject
 
         _store.Save(_document);
         Refresh();
-        Status = $"Đã cho phép thêm {added.Count} phần mềm. Bấm \"Lưu vào tường lửa\" để áp dụng.";
+        ApplyAfterChange($"Đã cho phép thêm {added.Count} phần mềm.");
     }
 
     /// <summary>
@@ -352,9 +352,14 @@ public sealed class AllowListViewModel : ObservableObject
 
         int added = AddApps(picked);
 
-        Status = added == 0
-            ? "Những phần mềm đã chọn đều được cho phép rồi."
-            : $"Đã cho phép thêm {added} file. Bấm \"Lưu vào tường lửa\" để áp dụng.";
+        if (added == 0)
+        {
+            Status = "Những phần mềm đã chọn đều được cho phép rồi.";
+        }
+        else
+        {
+            ApplyAfterChange($"Đã cho phép thêm {added} file.");
+        }
     }
 
     private void ScanRunningApps()
@@ -367,9 +372,14 @@ public sealed class AllowListViewModel : ObservableObject
 
         int added = AddApps(picked);
 
-        Status = added == 0
-            ? "Những phần mềm đã chọn đều được cho phép rồi."
-            : $"Đã cho phép thêm {added} phần mềm. Bấm \"Lưu vào tường lửa\" để áp dụng.";
+        if (added == 0)
+        {
+            Status = "Những phần mềm đã chọn đều được cho phép rồi.";
+        }
+        else
+        {
+            ApplyAfterChange($"Đã cho phép thêm {added} phần mềm.");
+        }
     }
 
     /// <summary>
@@ -468,7 +478,7 @@ public sealed class AllowListViewModel : ObservableObject
 
         _store.Save(_document);
         Refresh();
-        Status = $"Đã cho phép {added.Count}: {string.Join(", ", added)}. Bấm \"Lưu vào tường lửa\" để áp dụng.";
+        ApplyAfterChange($"Đã cho phép {added.Count}: {string.Join(", ", added)}.");
     }
 
     private void RemoveSelected()
@@ -478,10 +488,36 @@ public sealed class AllowListViewModel : ObservableObject
             return;
         }
 
+        string name = _selected.DisplayName;
         RemoveEntry(_selected.Source);
         _store.Save(_document);
         Refresh();
-        Status = "Đã bỏ khỏi danh sách. Bấm \"Lưu vào tường lửa\" để áp dụng.";
+        ApplyAfterChange($"Đã khoá {name} — bỏ khỏi danh sách cho phép.");
+    }
+
+    /// <summary>
+    /// Writes the list to the firewall right after a change, so adding or removing an app takes
+    /// effect on its own without a separate "Lưu vào tường lửa" step.
+    /// </summary>
+    /// <remarks>
+    /// Applying needs administrator rights. Without them the change still stands in the list, and
+    /// the next elevated run or the boot reconcile carries it into the firewall - so the message
+    /// says that rather than pretending the firewall changed.
+    /// </remarks>
+    private void ApplyAfterChange(string changeMessage)
+    {
+        if (!ElevationService.IsElevated)
+        {
+            Status = changeMessage + " Chạy lại với quyền quản trị để áp vào tường lửa (hoặc nó tự áp khi khởi động lại máy).";
+            return;
+        }
+
+        // On success ApplyToFirewall sets Status to the diff; a friendlier line replaces it. On
+        // failure it has set the reason, which is left in place.
+        if (ApplyToFirewall())
+        {
+            Status = changeMessage + " Đã cập nhật tường lửa.";
+        }
     }
 
     private void RemoveEntry(AllowedApp app)
